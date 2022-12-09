@@ -24,27 +24,21 @@
 #pragma once
 
 #include "usbkbdparser.h"
-#ifdef ADBUINO
-#include <hidboot.h>
-#elif RP2040
-#include "hidinputclasses.h"
-#endif
 
-#include "scqueue.h"
+struct AmigaKey
+{
+    public:
+        uint8_t rotatedKeyCode;
+        bool isKeyDown;
+};
 
-#define ADB_POWER_KEYCODE 0x7f
-
-using simple_circular_queue::SCQueue;
-
-extern uint8_t usb_keycode_to_adb_code(uint8_t usb_code);
-
-
-class ADBKbdRptParser : public KbdRptParser
+class AmigaKbdRptParser : public KbdRptParser
 {
 public:
-    ADBKbdRptParser();
 
-    uint16_t GetAdbRegister0();
-    uint16_t GetAdbRegister2();
+
+    bool isKeyQueued(void);
+    AmigaKey* getAmigaKeyCode();
+    
 
 };

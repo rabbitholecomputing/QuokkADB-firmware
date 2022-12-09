@@ -1,7 +1,14 @@
 // Minimal implementation of Arudino's Serial class
 #include "rp2040_serial.h"
-#include "quokkadb_gpio.h"
 #include "printf/printf.h"
+
+#ifdef QUOKKADB
+#include "quokkadb_gpio.h"
+#elif QUOKKAMIGA
+#include "hardware/uart.h"
+// #include "quokkamiga_gpio.h"
+#define UART_PORT uart0
+#endif
 
 namespace rp2040_serial {
  

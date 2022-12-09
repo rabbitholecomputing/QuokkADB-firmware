@@ -1,5 +1,5 @@
 {
-    "name": "QuokkADB RP2040",
+    "name": "Generic RP2040",
     "url": "https://github.com/rabbitholecomputing/QuokkADB-firmware",
     "vendor": "Rabbit Hole Computing",
     "build": {

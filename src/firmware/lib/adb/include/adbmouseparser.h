@@ -21,12 +21,7 @@
 //  with this file. If not, see <https://www.gnu.org/licenses/>.
 //----------------------------------------------------------------------------
 #pragma once
-// #ifdef ADBUINO
-// #include <hidboot.h>
-// #elif QUOKKADB
-// #include <stdlib.h>
-// #include "hidinputclasses.h"
-// #endif
+
 #include "usbmouseparser.h"
 
 class ADBMouseRptParser : public MouseRptParser

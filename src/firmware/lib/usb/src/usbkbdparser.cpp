@@ -24,10 +24,10 @@
 
 #include "usbkbdparser.h"
 #include "bithacks.h"
-#include "adbregisters.h"
+#include "tusb.h"
 #include "usb_hid_keys.h"
 
-#ifdef QUOKKADB
+#ifdef RP2040
 #include "rp2040_serial.h"
 using rp2040_serial::Serial;
 #endif
@@ -59,7 +59,7 @@ void KbdRptParser::PrintKey(uint8_t m, uint8_t key)
     Serial.print(" >");
     #ifdef ADBIUNO
         PrintHex<uint8_t>(key, 0x80);
-    #elif QUOKKADB
+    #elif RP2040
         Serial.print(key, HEX);
     #endif
     Serial.print("< ");

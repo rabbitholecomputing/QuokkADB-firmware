@@ -22,12 +22,12 @@
 //
 //----------------------------------------------------------------------------
 
+#include "adbregisters.h"
 #include "adbkbdparser.h"
 #include "bithacks.h"
-#include "adbregisters.h"
 #include "usb_hid_keys.h"
 
-#ifdef QUOKKADB
+#ifdef RP2040
 #include "rp2040_serial.h"
 using rp2040_serial::Serial;
 #endif

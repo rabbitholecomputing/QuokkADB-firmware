@@ -23,7 +23,7 @@
 #pragma once
 #ifdef ADBUINO
 #include <hidboot.h>
-#elif QUOKKADB
+#elif RP2040
 #include <stdlib.h>
 #include "hidinputclasses.h"
 #endif

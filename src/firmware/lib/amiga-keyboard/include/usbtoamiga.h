@@ -1,11 +1,10 @@
-//----------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 //
-//  ADBuino & QuokkADB ADB keyboard and mouse adapter
-//     Copyright (C) 2007 Peter H Anderson
-//	   Copyright (C) 2021-2022 akuker
+//	QuokkAmiga Amiga keyboard adapter
+//
 //     Copyright (C) 2022 Rabbit Hole Computing LLC
 //
-//  This file is part of the ADBuino & QuokkADB and projects
+//  This file is part of QuokkAmiga.
 //
 //  This file is free software: you can redistribute it and/or modify it under 
 //  the terms of the GNU General Public License as published by the Free 
@@ -19,32 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License along 
 //  with this file. If not, see <https://www.gnu.org/licenses/>.
+//
+//  Portions of this code were originally released under a Modified BSD 
+//  License. See LICENSE in the root of this repository for more info.
+//
 //----------------------------------------------------------------------------
-
 #pragma once
+#include <stdint.h>
 
-#include "usbkbdparser.h"
-#ifdef ADBUINO
-#include <hidboot.h>
-#elif RP2040
-#include "hidinputclasses.h"
-#endif
-
-#include "scqueue.h"
-
-#define ADB_POWER_KEYCODE 0x7f
-
-using simple_circular_queue::SCQueue;
-
-extern uint8_t usb_keycode_to_adb_code(uint8_t usb_code);
-
-
-class ADBKbdRptParser : public KbdRptParser
-{
-public:
-    ADBKbdRptParser();
-
-    uint16_t GetAdbRegister0();
-    uint16_t GetAdbRegister2();
-
-};
+uint8_t usb_keycode_to_amiga_code(uint8_t usb_code);
