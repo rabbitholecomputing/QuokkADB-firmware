@@ -1,7 +1,29 @@
 #pragma once
 #include "quokkamiga_gpio.h"
 
-bool detect_handshake();
+#define AMIGA_KBD_WAIT_TIME_US (143)
+#define AMIGA_KBD_PULSE_WIDTH_MIN_US (1) 
+
+enum class handshake_state 
+{
+    waiting,
+    pulse_active,
+    pulse_done,
+    pulse_error,
+    timeout
+
+};
+
+enum class handshake_status
+{
+    ok,
+    timeout,
+    pulse_error,
+    error
+
+};
+
+handshake_status detect_handshake();
 
 inline void amiga_set_data(bool high)
 {
