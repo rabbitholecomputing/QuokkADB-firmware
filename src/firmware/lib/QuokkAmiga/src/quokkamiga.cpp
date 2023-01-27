@@ -79,7 +79,7 @@ int quokkamiga(void)
     if (kbdparser.isKeyQueued())
     {
       key = kbdparser.getAmigaKeyCode();
-      keyboard.send_key(key);
+      keyboard.start_send_key(key);
       free(key);
     }
   }
