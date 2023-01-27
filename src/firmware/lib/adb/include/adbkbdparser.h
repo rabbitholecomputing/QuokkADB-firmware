@@ -26,8 +26,8 @@
 #include "usbkbdparser.h"
 #ifdef ADBUINO
 #include <hidboot.h>
-#elif RP2040
-#include "hidinputclasses.h"
+#elif QUOKKADB
+#include "keyboardrptparser.h"
 #endif
 
 #include "scqueue.h"

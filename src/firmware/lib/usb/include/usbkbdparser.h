@@ -25,8 +25,8 @@
 
 #ifdef ADBUINO
 #include <hidboot.h>
-#elif RP2040
-#include "hidinputclasses.h"
+#elif QUOKKADB
+#include "keyboardrptparser.h"
 #endif
 
 #include "scqueue.h"
@@ -63,14 +63,15 @@ public:
     KeyEvent GetKeyEvent();
     bool PendingKeyboardEvent();
     void Reset(void);
+    
 
 protected:
-    void OnControlKeysChanged(uint8_t before, uint8_t after);
+    void OnModifierKeysChanged(uint8_t before, uint8_t after);
 
     void OnKeyDown(uint8_t mod, uint8_t key);
     void OnKeyUp(uint8_t mod, uint8_t key);
     void OnKeyPressed(uint8_t key);
-    
+
     uint8_t m_last_key_pressed;
     uint8_t m_last_key_up_or_down;
 
