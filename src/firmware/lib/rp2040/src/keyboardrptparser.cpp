@@ -27,17 +27,17 @@
 
 #include "keyboardrptparser.h"
 #include "usb_hid_keys.h"
-#include "quokkadb_config.h"
+#include "platform_config.h"
 #include "char2usbkeycode.h"
-#include "flashsettings.h"
 #include <tusb.h>
+#include "flashsettings.h"
 
 #define VALUE_WITHIN(v,l,h) (((v)>=(l)) && ((v)<=(h)))
 #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
 
 extern uint16_t modifierkeys;
 extern bool set_hid_report_ready;
-extern FlashSettings setting_storage;
+FlashSettings setting_storage;
 
 uint8_t inline findModifierKey(hid_keyboard_report_t const *report, const hid_keyboard_modifier_bm_t mod ) {
         return (mod & report->modifier) ? 1 : 0;
@@ -188,7 +188,7 @@ bool KeyboardReportParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                 switch (special_key)
                 {
                 case USB_KEY_V:
-                        SendString(QUOKKADB_FW_VER_STRING);
+                        SendString(PLATFORM_FW_VER_STRING);
                 break;
                 case USB_KEY_L:
                         setting_storage.settings()->led_on = ~setting_storage.settings()->led_on;

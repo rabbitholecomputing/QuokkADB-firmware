@@ -38,6 +38,8 @@
 #include "pico/multicore.h"
 #include "pico/bootrom.h"
 
+
+#include "platform_config.h"
 #include "tusb.h"
 #include "printf/printf.h"
 #include "rp2040_serial.h"
@@ -46,7 +48,7 @@
 #include "adbkbdparser.h"
 #include "adbmouseparser.h"
 #include "flashsettings.h"
-#include "quokkadb_config.h"
+
 
 using rp2040_serial::Serial;
 
@@ -70,7 +72,7 @@ AdbInterface adb;
 
 ADBKbdRptParser KeyboardPrs;
 ADBMouseRptParser MousePrs(KeyboardPrs);
-FlashSettings setting_storage;
+extern FlashSettings setting_storage;
 
 /*------------- MAIN -------------*/
 
@@ -111,7 +113,7 @@ int quokkadb(void) {
   multicore_launch_core1(core1_main);
   multicore_lockout_victim_init();
   led_blink(1);
-  printf("QuokkADB firmware: %s\n", QUOKKADB_FW_VERSION);
+  printf("QuokkADB firmware: %s\n", PLATFORM_FW_VERSION);
   srand(time_us_32());
 /*------------ Core0 main loop ------------*/
   while (true) {

@@ -29,7 +29,6 @@
 //#include "adbregisters.h"
 #include "usbkbdparser.h"
 #include "usb_hid_keys.h"
-#include "hidinputclasses.h"
 #include "usbmouseparser.h"
 
 #define kModCmd 1

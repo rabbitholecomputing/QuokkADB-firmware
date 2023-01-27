@@ -27,9 +27,9 @@
 #include <stdint.h>
 #include <hardware/flash.h>
 
-#define QUOKKADB_SETTINGS_MAGIC_NUMBER 0x71DE
+#define RP2040_FLASH_SETTINGS_MAGIC_NUMBER 0x71DE
 
-struct __attribute((packed)) QuokkADBSettings 
+struct __attribute((packed)) RP2040FlashSettings 
 {
     uint16_t magic_number;
     uint8_t led_on: 1;
@@ -44,10 +44,10 @@ public:
     void write_settings_page(uint8_t *buf); 
     uint8_t* read_settings_page(void);
     void save(void);
-    inline QuokkADBSettings* settings() {return &_settings;}
+    inline RP2040FlashSettings* settings() {return &_settings;}
 private:
     uint32_t _capacity = 0;
     uint32_t _last_sector = 0;
-    QuokkADBSettings _settings;
+    RP2040FlashSettings _settings;
 };
 

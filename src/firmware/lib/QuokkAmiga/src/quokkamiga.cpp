@@ -35,13 +35,14 @@
 #include "quokkamiga_gpio.h"
 #include "amigakbdparser.h"
 #include "amigakeyboard.h"
+#include "flashsettings.h"
 
 
 
 using amiga_keyboard::AmigaKeyboard;
 
 bool global_debug = false;
-
+extern FlashSettings setting_storage;
 
 // core1: handle host events
 void core1_main() {
@@ -63,6 +64,7 @@ int quokkamiga(void)
   uart_gpio_init();
   led_gpio_init();
   amiga_kbd_gpio_init();
+  setting_storage.init();
   sleep_ms(10);
   
   multicore_reset_core1();

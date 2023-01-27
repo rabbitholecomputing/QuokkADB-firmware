@@ -17,14 +17,14 @@ void FlashSettings::init(void)
     // Read initial settings
     uint8_t* setting_buffer = read_settings_page();
     
-    if (((uint16_t*)setting_buffer)[0] == QUOKKADB_SETTINGS_MAGIC_NUMBER) 
+    if (((uint16_t*)setting_buffer)[0] == RP2040_FLASH_SETTINGS_MAGIC_NUMBER) 
     {
         memcpy((void*)&_settings, setting_buffer, FLASH_PAGE_SIZE);
     }
     else
     {
         // set default values
-        _settings.magic_number = QUOKKADB_SETTINGS_MAGIC_NUMBER;
+        _settings.magic_number = RP2040_FLASH_SETTINGS_MAGIC_NUMBER;
         _settings.led_on = 1;
     }
 

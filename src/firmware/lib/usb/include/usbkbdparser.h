@@ -25,7 +25,7 @@
 
 #ifdef ADBUINO
 #include <hidboot.h>
-#elif QUOKKADB
+#elif RP2040
 #include "keyboardrptparser.h"
 #endif
 
