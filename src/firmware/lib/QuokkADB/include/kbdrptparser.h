@@ -22,25 +22,30 @@
 //----------------------------------------------------------------------------
 
 #pragma once
-
-#include "kbdrptparser.h"
-
-#define AMIGA_AMIGA_CTRL 0x78
-
-struct AmigaKey
-{
-    public:
-        uint8_t rotatedKeyCode;
-        bool isKeyDown;
-};
-
-class AmigaKbdRptParser : public KbdRptParser
+#include "usbkbdparser.h"
+class KbdRptParser : public UsbKbdRptParser 
 {
 public:
+    void OnKeyDown(uint8_t mod, uint8_t key);
+    void OnKeyUp(uint8_t mod, uint8_t key);
 
+protected:
+    // Flag to indicated that the key was released
+    const uint16_t KeyReleasedFlag = 0x80;
 
-    bool isKeyQueued(void);
-    AmigaKey* getAmigaKeyCode();
-    
+    // Flags for special modifier keys that are used in the ADB
+    // protocol, but not handled automatically by the Arduino
+    // USB library
+    uint16_t m_custom_mod_keys;
+    // Flags for the custom ADB-specific modifier keys
+    static const int DeleteFlag = 0;
+    static const int CapsLockFlag = 1;
+    static const int ResetFlag = 2;
+    static const int NumLockFlag = 3;
+    static const int ScrollLockFlag = 4;
+    static const int Led3ScrollLockFlag = 5;
+    static const int Led2CapsLockFlag = 6;
+    static const int Led1NumLockFlag = 7;
+
 
 };

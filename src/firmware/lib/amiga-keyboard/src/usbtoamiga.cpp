@@ -239,7 +239,7 @@ uint8_t usb_keycode_to_amiga_code(uint8_t usb_code)
     case USB_KEY_PAUSE:
         return 0x6E;
     case USB_KEY_F12:
-        return 0x6F;
+        return 0x78;
 
     default:
         Serial.print("Unknown keycode found: ");

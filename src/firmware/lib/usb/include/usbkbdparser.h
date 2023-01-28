@@ -55,7 +55,7 @@ protected:
     uint8_t m_key_updown;
 };
 
-class KbdRptParser : public KeyboardReportParser
+class UsbKbdRptParser : public KeyboardReportParser
 {
 public:
     void PrintKey(uint8_t mod, uint8_t key);
@@ -68,8 +68,7 @@ public:
 protected:
     void OnModifierKeysChanged(uint8_t before, uint8_t after);
 
-    void OnKeyDown(uint8_t mod, uint8_t key);
-    void OnKeyUp(uint8_t mod, uint8_t key);
+
     void OnKeyPressed(uint8_t key);
 
     uint8_t m_last_key_pressed;
@@ -78,22 +77,6 @@ protected:
     uint8_t m_previous_key_pressed;
     MODIFIERKEYS m_modifier_keys;
 
-    // Flag to indicated that the key was released
-    const uint16_t KeyReleasedFlag = 0x80;
-
-    // Flags for special modifier keys that are used in the ADB
-    // protocol, but not handled automatically by the Arduino
-    // USB library
-    uint16_t m_custom_mod_keys;
-    // Flags for the custom ADB-specific modifier keys
-    static const int DeleteFlag = 0;
-    static const int CapsLockFlag = 1;
-    static const int ResetFlag = 2;
-    static const int NumLockFlag = 3;
-    static const int ScrollLockFlag = 4;
-    static const int Led3ScrollLockFlag = 5;
-    static const int Led2CapsLockFlag = 6;
-    static const int Led1NumLockFlag = 7;
 
     SCQueue<KeyEvent*, KEYBOARD_QUEUE_CAPACITY> m_keyboard_events;
 

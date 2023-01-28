@@ -1,6 +1,15 @@
 #pragma once
 #include "quokkamiga_gpio.h"
 
+inline void amiga_set_clk_bit_1()
+{
+    AMIGA_CLK_OUT_LOW();
+}
+
+inline void amiga_set_clk_bit_0()
+{
+    AMIGA_CLK_OUT_HIGH();
+}
 
 inline void amiga_set_data(bool high)
 {

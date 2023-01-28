@@ -216,4 +216,15 @@ namespace amiga_keyboard
         // should never get here
         return false;
     }
+    void AmigaKeyboard::start_hard_reset() 
+    {
+        amiga_set_clk_bit_1();
+    }
+
+    void AmigaKeyboard::stop_hard_reset()
+    {
+        amiga_set_clk_bit_0();
+    }
 }
+
+

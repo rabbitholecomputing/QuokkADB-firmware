@@ -47,6 +47,12 @@ AmigaKey* AmigaKbdRptParser::getAmigaKeyCode()
         event = m_keyboard_events.dequeue();
         key->rotatedKeyCode = usb_keycode_to_amiga_code(event->GetKeycode()) << 1;
         key->isKeyDown = event->IsKeyDown();
+        if (event->GetKeycode() == USB_KEY_F12)
+        {
+            free(event);
+            return key;
+        }
+
         free(event);
         // MSB bit is low (logic 1) for key down
         if (!key->isKeyDown)

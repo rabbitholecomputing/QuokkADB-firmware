@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "usbkbdparser.h"
+#include "kbdrptparser.h"
 #ifdef ADBUINO
 #include <hidboot.h>
 #elif QUOKKADB

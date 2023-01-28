@@ -82,8 +82,49 @@ int quokkamiga(void)
     {
       key = kbdparser.getAmigaKeyCode();
       keyboard.start_send_key(key);
+      // if the key is soft reset
+      if (key->rotatedKeyCode == (AMIGA_AMIGA_CTRL << 1) && key->isKeyDown) {
+        // @TODO implement soft reset
+        // if(!keyboard->startSoftRest())
+        {
+          // hard reset
+          amiga_hard_reset();
+        }
+      }
+      else {
+        
+      }
       free(key);
     }
   }
   return 0;
+}
+
+bool amiga_hard_reset()
+{
+    uint64_t timer_start = time_us_64();
+    uint64_t time;
+    AmigaKey* reset_key;
+    bool reset_keyboard = false;
+    keyboard.start_hard_reset();
+    // Check if hard reset buttons are held down long enough
+    while (true)
+    {
+      if (kbdparser.isKeyQueued())
+      {
+          reset_key = kbdparser.getAmigaKeyCode();
+          if (reset_key->rotatedKeyCode == (AMIGA_AMIGA_CTRL << 1) && !reset_key->isKeyDown)
+          {
+            keyboard.stop_hard_reset();
+            time = time_us_64();
+            if (timer_start - time > AMIGA_HARD_RESET_TIME_US){
+              reset_keyboard = true;
+            }
+            free(reset_key);
+            break;
+          }
+          free(reset_key);
+      }
+    }
+  return reset_keyboard;
 }

@@ -56,6 +56,8 @@ namespace amiga_keyboard
     {
         public:
             bool start_send_key(AmigaKey *key);
+            void start_hard_reset();
+            void stop_hard_reset();
         protected:
             bool send_key(AmigaKey* key, bool root);
             HandshakeStatus detect_handshake();

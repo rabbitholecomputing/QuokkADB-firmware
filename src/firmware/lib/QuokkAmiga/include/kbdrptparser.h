@@ -1,10 +1,11 @@
-//---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 //
-//	QuokkAmiga Amiga keyboard adapter
-//
+//  ADBuino & QuokkADB ADB keyboard and mouse adapter
+//     Copyright (C) 2007 Peter H Anderson
+//	   Copyright (C) 2021-2022 akuker
 //     Copyright (C) 2022 Rabbit Hole Computing LLC
 //
-//  This file is part of QuokkAmiga.
+//  This file is part of the ADBuino & QuokkADB and projects
 //
 //  This file is free software: you can redistribute it and/or modify it under 
 //  the terms of the GNU General Public License as published by the Free 
@@ -18,12 +19,21 @@
 //
 //  You should have received a copy of the GNU General Public License along 
 //  with this file. If not, see <https://www.gnu.org/licenses/>.
-//
-//  Portions of this code were originally released under a Modified BSD 
-//  License. See LICENSE in the root of this repository for more info.
-//
 //----------------------------------------------------------------------------
+
 #pragma once
-#define AMIGA_HARD_RESET_TIME_US 500 * 1000
-int quokkamiga(void);
-bool amiga_hard_reset();
+#include "usbkbdparser.h"
+class KbdRptParser : public UsbKbdRptParser 
+{
+public:
+    void OnKeyDown(uint8_t mod, uint8_t key);
+    void OnKeyUp(uint8_t mod, uint8_t key);
+    inline bool IsAmigaAmigaCtrl() {return amiga_amiga_ctrl;}
+protected:
+    bool AmigaAmigaCtrlTest();
+    bool left_amiga_down = false;
+    bool right_amiga_down = false;
+    bool left_ctrl_down = false;
+    bool right_ctrl_down = false;
+    bool amiga_amiga_ctrl = false;
+};

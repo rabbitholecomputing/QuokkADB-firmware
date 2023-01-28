@@ -40,7 +40,7 @@
 #define kModDelete 64
 
 extern uint16_t modifierkeys;
-extern KbdRptParser kbdparser;
+extern UsbKbdRptParser kbdparser;
 //extern MouseRptParser MousePrs;
 
 static bool capslock_status   = false;

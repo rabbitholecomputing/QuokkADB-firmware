@@ -41,7 +41,7 @@
 #define kModCaps 32
 #define kModDelete 64
 extern uint16_t modifierkeys;
-extern KbdRptParser KeyboardPrs;
+extern UsbKbdRptParser KeyboardPrs;
 extern MouseRptParser MousePrs;
 
 bool set_hid_report_ready = true;
