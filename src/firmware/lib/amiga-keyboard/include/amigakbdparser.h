@@ -38,9 +38,7 @@ class AmigaKbdRptParser : public KbdRptParser
 {
 public:
 
-
-    bool isKeyQueued(void);
-    AmigaKey* getAmigaKeyCode();
-    
+    bool IsKeyQueued(void);
+    AmigaKey* GetAmigaKeyCode();
 
 };

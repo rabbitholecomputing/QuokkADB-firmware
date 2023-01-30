@@ -29,6 +29,8 @@ public:
     void OnKeyDown(uint8_t mod, uint8_t key);
     void OnKeyUp(uint8_t mod, uint8_t key);
     inline bool IsAmigaAmigaCtrl() {return amiga_amiga_ctrl;}
+    inline bool IsSoftReset() {return _soft_rest;}
+    inline void SetSoftReset(bool isReset){ _soft_rest = isReset;}
 protected:
     bool AmigaAmigaCtrlTest();
     bool left_amiga_down = false;
@@ -36,4 +38,5 @@ protected:
     bool left_ctrl_down = false;
     bool right_ctrl_down = false;
     bool amiga_amiga_ctrl = false;
+    bool _soft_rest = false;
 };

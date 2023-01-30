@@ -32,12 +32,12 @@ using rp2040_serial::Serial;
 
 extern bool global_debug;
 
-bool AmigaKbdRptParser::isKeyQueued(void)
+bool AmigaKbdRptParser::IsKeyQueued(void)
 {
     return !m_keyboard_events.isEmpty();
 }
 
-AmigaKey* AmigaKbdRptParser::getAmigaKeyCode()
+AmigaKey* AmigaKbdRptParser::GetAmigaKeyCode()
 {
     KeyEvent *event;
     AmigaKey* key = new AmigaKey();
@@ -47,12 +47,6 @@ AmigaKey* AmigaKbdRptParser::getAmigaKeyCode()
         event = m_keyboard_events.dequeue();
         key->rotatedKeyCode = usb_keycode_to_amiga_code(event->GetKeycode()) << 1;
         key->isKeyDown = event->IsKeyDown();
-        if (event->GetKeycode() == USB_KEY_F12)
-        {
-            free(event);
-            return key;
-        }
-
         free(event);
         // MSB bit is low (logic 1) for key down
         if (!key->isKeyDown)

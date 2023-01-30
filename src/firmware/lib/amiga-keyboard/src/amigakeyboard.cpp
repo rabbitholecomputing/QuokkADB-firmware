@@ -1,13 +1,17 @@
 #include "amigakeyboard.h"
 #include "amiga_platform.h"
-namespace amiga_keyboard
+namespace amiga_keyboard 
 {
+    AmigaKeyboard::AmigaKeyboard(AmigaKbdRptParser* kbd_rpt_parser)
+    {
+        parser = kbd_rpt_parser;
+    }
     bool AmigaKeyboard::start_send_key(AmigaKey *key)
     {
-        return send_key(key, true);
+        return send_key(key, SendKeyType::root);
     }
 
-    bool AmigaKeyboard::send_key(AmigaKey *key, bool root)
+    bool AmigaKeyboard::send_key(const AmigaKey *key, const SendKeyType send_type)
     {
         uint8_t bit_count = 8;
         state = SendKeySM::idle;
@@ -42,18 +46,30 @@ namespace amiga_keyboard
 
             case SendKeySM::clkup:
                 amiga_set_clock(true);
+                // Finish sending last bit
                 if (bit_count == 0)
                 {
                     sleep_us(20);
                     amiga_set_data(true);
-                    handshake = detect_handshake();
-                    if (handshake == HandshakeStatus::ok)
+                    if (SendKeyType::soft_reset_skip_handshake ==  send_type)
                     {
-                        success = true;
+                        success = detect_soft_reset();
                     }
-                    else if(root)
-                    {
-                        handle_handshake_error(handshake, key);
+                    else
+                    {                    
+                        handshake = detect_handshake();
+                        if (handshake == HandshakeStatus::ok)
+                        {
+                            success = true;
+                        }
+                        else if(SendKeyType::root == send_type)
+                        {
+                            handle_handshake_error(handshake, key, SendKeyType::soft_reset_root == send_type);
+                        }
+                        else if(SendKeyType::soft_reset_root == send_type)
+                        {
+                            success = false;
+                        }
                     }
                     state = SendKeySM::end;
                 }
@@ -85,8 +101,11 @@ namespace amiga_keyboard
             switch (state)
             {
             case HandshakeState::waiting:
-
-                if (amiga_get_data() == false)
+                if (parser->IsSoftReset())
+                {
+                    state = HandshakeState::pulse_error;
+                }
+                else if (amiga_get_data() == false)
                 {
                     pulse_start_time = time_us_64();
                     state = HandshakeState::pulse_active;
@@ -109,6 +128,12 @@ namespace amiga_keyboard
                         state = HandshakeState::pulse_done;
                     }
                 }
+                else {
+                    if (AMIGA_KBD_PULSE_WIDTH_MAX_US < time_us_64() - pulse_start_time)
+                    {
+                        state = HandshakeState::pulse_error;
+                    }
+                }
             break;
             case HandshakeState::pulse_done:
                 return HandshakeStatus::ok;
@@ -126,13 +151,13 @@ namespace amiga_keyboard
         return HandshakeStatus::error;
     }
 
-    bool AmigaKeyboard::handle_handshake_error(HandshakeStatus error, AmigaKey *key)
+    bool AmigaKeyboard::handle_handshake_error(const HandshakeStatus error, const AmigaKey *key, bool is_soft_reset )
     {
         AmigaKey lost_sync_key_code;
         HandshakeErrorState state = HandshakeErrorState::send_1_bit;
         HandshakeStatus status;
         static uint8_t limit_recovery_attempts = 0;
-        static uint8_t unwind_recursion = 0;
+    
 
         if (error == HandshakeStatus::timeout || error == HandshakeStatus::pulse_error)
         {
@@ -155,14 +180,21 @@ namespace amiga_keyboard
                     state = HandshakeErrorState::waiting;
                 break;
                 case HandshakeErrorState::waiting:
-                    status = detect_handshake();
-                    if (status == HandshakeStatus::ok)
+                    if (parser->IsSoftReset())
                     {
-                        state = HandshakeErrorState::send_lost_sync;
+                        state = HandshakeErrorState::force_end;
                     }
                     else
                     {
-                        state = HandshakeErrorState::send_1_bit;
+                        status = detect_handshake();
+                        if (status == HandshakeStatus::ok)
+                        {
+                            state = HandshakeErrorState::send_lost_sync;
+                        }
+                        else
+                        {
+                            state = HandshakeErrorState::send_1_bit;
+                        }
                     }
                 break;
                 case HandshakeErrorState::send_lost_sync:
@@ -175,7 +207,7 @@ namespace amiga_keyboard
                         lost_sync_key_code.isKeyDown = false;
                         lost_sync_key_code.rotatedKeyCode = AMIGA_LOST_SYNC_CODE;
                         limit_recovery_attempts++;
-                        if (send_key(&lost_sync_key_code, false))
+                        if (send_key(&lost_sync_key_code, SendKeyType::skip_handshake_error_handling))
                         {
                             state = HandshakeErrorState::resend_key;
                         }
@@ -193,7 +225,7 @@ namespace amiga_keyboard
                     else 
                     {
                         limit_recovery_attempts++;
-                        if (send_key(key, false))
+                        if (send_key(key, SendKeyType::skip_handshake_error_handling))
                         {
                             state = HandshakeErrorState::done;
                         }
@@ -216,15 +248,100 @@ namespace amiga_keyboard
         // should never get here
         return false;
     }
-    void AmigaKeyboard::start_hard_reset() 
+
+    bool AmigaKeyboard::detect_soft_reset()
     {
-        amiga_set_clk_bit_1();
+        bool success = false;
+        uint64_t start = time_us_64();
+        uint64_t time = time_us_64();
+        uint64_t pulse_start_time;
+        HandshakeState state = HandshakeState::waiting;
+        while (true)
+        {
+            switch (state)
+            {
+            case HandshakeState::waiting:
+                if (amiga_get_data() == false)
+                {
+                    pulse_start_time = time_us_64();
+                    state = HandshakeState::pulse_active;
+                }
+                else if (AMIGA_SOFT_RESET_WAIT_BEGIN_US < time - start)
+                {
+                    state = HandshakeState::timeout;
+                }
+            break;
+            case HandshakeState::pulse_active:
+                if (AMIGA_SOFT_RESET_WAIT_FINISH_US < time_us_64() - pulse_start_time)
+                {
+                    state = HandshakeState::pulse_error;
+
+                }
+                else if (amiga_get_data() == true)
+                {
+                    state = HandshakeState::pulse_done;
+                }
+            break;
+            case HandshakeState::pulse_done:
+                return true;
+            break;
+            case HandshakeState::pulse_error:
+                return false;
+            break;
+            case HandshakeState::timeout:
+                return false;
+            break;
+            }
+            time = time_us_64();
+        }
     }
 
-    void AmigaKeyboard::stop_hard_reset()
+    uint64_t AmigaKeyboard::soft_reset()
     {
-        amiga_set_clk_bit_0();
+        uint64_t start = time_us_64();
+        AmigaKey key;
+        key.isKeyDown = true;
+        key.rotatedKeyCode = AMIGA_AMIGA_CTRL << 1;
+
+        if (send_key(&key, SendKeyType::soft_reset_root))
+        {
+            send_key(&key, SendKeyType::soft_reset_skip_handshake);
+        }
+        return time_us_64() - start;
     }
+    bool AmigaKeyboard::hard_reset(uint64_t soft_reset_duration) 
+    {
+        uint64_t start = time_us_64() - soft_reset_duration;
+        uint64_t time = time_us_64();
+        amiga_set_clk_bit_1();
+        while(true)
+        {
+            if (!parser->IsSoftReset())
+            {
+                if (AMIGA_HARD_RESET_MIN > time - start)
+                {
+                    amiga_set_clk_bit_0();
+                    return false;
+                }
+                if (AMIGA_HARD_RESET_MIN <= time - start)
+                {
+                    amiga_set_clk_bit_0();
+                    return true;
+                }
+            }
+            else
+            {
+                if (AMIGA_HARD_RESET_TIMEOUT < time - start)
+                {
+                    amiga_set_clk_bit_0();
+                    return true;
+                }
+            }
+            time = time_us_64();
+        }
+
+    }
+
 }
 
 

@@ -73,7 +73,7 @@ void KbdRptParser::OnKeyDown(uint8_t mod, uint8_t key)
         // Use F12 as AMIGA AMIGA CTRL short cut
         if (amiga_amiga_ctrl) 
         {
-            !m_keyboard_events.enqueue(new KeyEvent(USB_KEY_F12, KeyEvent::KeyDown));
+            SetSoftReset(true);
         }
     }
     else
@@ -94,35 +94,31 @@ void KbdRptParser::OnKeyUp(uint8_t mod, uint8_t key)
         PrintKey(mod, key);
     }
 
-    if (m_keyboard_events.enqueue(new KeyEvent(key, KeyEvent::KeyUp)))
+    if ( IsSoftReset() ||  m_keyboard_events.enqueue(new KeyEvent(key, KeyEvent::KeyUp)))
     {
-        if(amiga_amiga_ctrl)
-        {
-            switch(key)
-            {
-                case USB_KEY_LEFTMETA :
-                    left_amiga_down = false;
-                    amiga_amiga_ctrl = AmigaAmigaCtrlTest();
-                break;
-                case USB_KEY_RIGHTMETA :
-                    right_amiga_down = false;
-                    amiga_amiga_ctrl = AmigaAmigaCtrlTest();
-                break;
-                case USB_KEY_LEFTCTRL :
-                    left_ctrl_down = false;
-                    amiga_amiga_ctrl = AmigaAmigaCtrlTest();
-                break;        
-                case USB_KEY_RIGHTCTRL :
-                    right_ctrl_down = false;
-                    amiga_amiga_ctrl = AmigaAmigaCtrlTest();
-                break;
-            }
 
-            if (!amiga_amiga_ctrl)
-            {
-                // Use F12 as amiga amiga ctrl shortcut
-                m_keyboard_events.enqueue(new KeyEvent(USB_KEY_F12, KeyEvent::KeyUp));
-            }
+        switch(key)
+        {
+            case USB_KEY_LEFTMETA :
+                left_amiga_down = false;
+                amiga_amiga_ctrl = AmigaAmigaCtrlTest();
+            break;
+            case USB_KEY_RIGHTMETA :
+                right_amiga_down = false;
+                amiga_amiga_ctrl = AmigaAmigaCtrlTest();
+            break;
+            case USB_KEY_LEFTCTRL :
+                left_ctrl_down = false;
+                amiga_amiga_ctrl = AmigaAmigaCtrlTest();
+            break;        
+            case USB_KEY_RIGHTCTRL :
+                right_ctrl_down = false;
+                amiga_amiga_ctrl = AmigaAmigaCtrlTest();
+            break;
+        }
+        if (!amiga_amiga_ctrl)
+        {
+            SetSoftReset(false);
         }
     }
     else
