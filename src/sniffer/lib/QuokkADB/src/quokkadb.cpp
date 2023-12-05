@@ -69,6 +69,12 @@ ADBKbdRptParser KeyboardPrs;
 ADBMouseRptParser MousePrs(KeyboardPrs);
 FlashSettings setting_storage;
 
+void initVariant() 
+{
+  log_init();
+  logmsg("---- Cache Logging Initialized ----");
+}
+
 /*------------ Core0 setup ------------*/
 void setup()
 {
@@ -104,7 +110,6 @@ void loop()
     usb_reset = true;
     Logmsg.println("ALL: Resetting devices");
   } 
-  log_poll();
 }
 
 
@@ -118,5 +123,5 @@ void setup1()
 /*------------ Core1 main loop ------------*/
 void loop1()
 {
- 
+   log_poll();
 }

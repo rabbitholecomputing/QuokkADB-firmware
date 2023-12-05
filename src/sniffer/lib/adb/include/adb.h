@@ -30,7 +30,7 @@
 #include <log_cache.h>
 
 #ifndef ADB_START_BIT_DELAY
-#define ADB_START_BIT_DELAY 100000
+#define ADB_START_BIT_DELAY 20000
 #endif
 
 #define KBD_DEFAULT_ADDR 0x02
@@ -205,11 +205,16 @@ inline int32_t AdbInterface::Snoop16bitRegister(void)
 
   // stop bit
   low_time = wait_data_hi(130);
-  if (!low_time || low_time > 70)
-  {  
+  if (!low_time || low_time < 40 )
+  { 
+    logmsg("---- Error: No stop bit. Low time (us): ", low_time); 
     return -4;
   }
-  
+  else if(low_time < 70)
+  {
+    logmsg("---- Stop bit");
+  }
+  logmsg("---- End 16 bit snoop");
   return data;
 out:
   return -5;

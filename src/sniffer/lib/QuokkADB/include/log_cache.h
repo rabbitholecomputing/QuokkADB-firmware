@@ -104,5 +104,5 @@ inline void dbgmsg(Params... params)
         log_raw("\r\n");
     }
 }
-
+void log_init();
 void log_poll();

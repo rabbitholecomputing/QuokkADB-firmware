@@ -2,7 +2,9 @@
 #include "log_cache.h"
 #include <stdarg.h>
 #include <pico/stdio.h>
+#include <pico/mutex.h>
 
+static mutex log_mutex;
 // This memory buffer can be read by debugger and is also saved to zululog.txt
 #define LOGBUFMASK (LOGBUFSIZE - 1)
 
@@ -115,6 +117,11 @@ void log_raw(bytearray array)
             break;
         }
     }
+}
+
+void log_init()
+{
+    mutex_init(&log_mutex);
 }
 
 uint32_t log_get_buffer_len()
