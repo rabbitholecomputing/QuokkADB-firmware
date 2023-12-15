@@ -25,9 +25,15 @@
 #pragma once
 
 // Use macros for version number
-#define FW_VER_NUM      "0.2.6"
+#define FW_VER_NUM      "0.4.0"
 #define FW_VER_SUFFIX   "beta"
 #define PLATFORM_FW_VERSION FW_VER_NUM "-" FW_VER_SUFFIX 
 #define PRODUCT_NAME "QuokkADB"
-#define PLATFORM_FW_VER_STRING PRODUCT_NAME " firmware: " PLATFORM_FW_VERSION " " __DATE__ " " __TIME__ " "
+#define PLATFORM_FW_VER_STRING PRODUCT_NAME " firmware: " PLATFORM_FW_VERSION " " __DATE__ " " __TIME__ 
 
+#ifndef DEFAULT_MOUSE_SENSITIVITY_DIVISOR
+#define DEFAULT_MOUSE_SENSITIVITY_DIVISOR 4
+#endif
+
+#define SAVE_TO_FLASH_BLINK_COUNT 4
+#define CLEAR_FLASH_BLINK_COUNT 5
