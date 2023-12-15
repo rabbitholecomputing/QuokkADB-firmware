@@ -42,6 +42,15 @@
 extern volatile bool adb_collision;
 extern volatile bool collision_detection;
 
+enum class adb_cmd_t 
+{
+  reset,
+  flush,
+  talk,
+  listen,
+  illegal
+};
+
 class AdbInterface : public AdbInterfacePlatform {
   public:
     //void ReadAdbCommand();
@@ -52,7 +61,7 @@ class AdbInterface : public AdbInterfacePlatform {
   protected:
     uint16_t GetAdbRegister3Keyboard();
     uint16_t GetAdbRegister3Mouse();
-    bool Send16bitRegister(uint16_t reg16);
+//    bool Send16bitRegister(uint16_t reg16);
     // returns less than zero on a failed receive
     int32_t Receive16bitRegister(void);
     int32_t Snoop16bitRegister(void);
@@ -66,25 +75,25 @@ class AdbInterface : public AdbInterfacePlatform {
 };
 
 
-inline bool AdbInterface::Send16bitRegister(uint16_t reg16)
-{
-    // stop to start time / interframe delay - min time 140us, max time 260. 
-    // adding randomness as suggested by Apple Guide the Mac. family  Hardware 2nd edition
-    // pg 324.  Random time delay will give a max stop to start time of 240us
+// inline bool AdbInterface::Send16bitRegister(uint16_t reg16)
+// {
+//     // stop to start time / interframe delay - min time 140us, max time 260. 
+//     // adding randomness as suggested by Apple Guide the Mac. family  Hardware 2nd edition
+//     // pg 324.  Random time delay will give a max stop to start time of 240us
  
-   uint32_t extra_delay = (rand() % 101);
-   if (!adb_delay_us(140 + extra_delay)) return false; 
+//    uint32_t extra_delay = (rand() % 101);
+//    if (!adb_delay_us(140 + extra_delay)) return false; 
 
-  adb_pin_out();
-  // start bit
-  if (!place_bit1()) return false; 
-  if (!send_byte((reg16 >> 8) & 0x00FF))  return false;
-  if (!send_byte(reg16 & 0x00FF))  return false;
-  // stop bit
-  if (!place_bit0()) return false;
-  adb_pin_in();
-  return true;
-}
+//   adb_pin_out();
+//   // start bit
+//   if (!place_bit1()) return false; 
+//   if (!send_byte((reg16 >> 8) & 0x00FF))  return false;
+//   if (!send_byte(reg16 & 0x00FF))  return false;
+//   // stop bit
+//   if (!place_bit0()) return false;
+//   adb_pin_in();
+//   return true;
+// }
 
 
 inline int32_t AdbInterface::Receive16bitRegister(void)
@@ -93,11 +102,16 @@ inline int32_t AdbInterface::Receive16bitRegister(void)
   uint16_t hi_time;
   uint16_t low_time;
 
-  hi_time = wait_data_lo(1000);
-  //logmsg("Hightime start stop: ", hi_time);
-  // start-stop time is officially > 140 and < 260
-  if (!hi_time || hi_time < 130 || hi_time > 270 )
+  hi_time = wait_data_lo(300);
+  // No data received
+  if (!hi_time)
   {
+    return -100;
+  }
+  // start-stop time is officially > 140 and < 260
+  else if (hi_time < 100 || hi_time > 270 )
+  {
+    logmsg("ERROR - receive 16bit reg: start-stop error high time: ", (int32_t) hi_time);
     return -1;  
   }
 
@@ -141,8 +155,9 @@ inline int32_t AdbInterface::Receive16bitRegister(void)
 
   // stop bit
   low_time = wait_data_hi(130);
-  if (!low_time || low_time > 70)
+  if (!low_time || low_time > 75)
   {  
+    logmsg("ERROR - receive 16bit reg: stop bit error low time: ", (int32_t) low_time);
     return -4;
   }
   
@@ -159,8 +174,14 @@ inline int32_t AdbInterface::Snoop16bitRegister(void)
 
   hi_time = wait_data_lo(1000);
   // start-stop time is officially > 140 and < 260
-  if (!hi_time || hi_time < 130 || hi_time > 270 )
+  if (!hi_time )
   {
+    // No Data
+    return -100;
+  }
+  if (hi_time < 100 || hi_time > 270 )
+  {
+    logmsg("-- Error: start-stop time is ", (int32_t) hi_time);
     return -1;  
   }
 
@@ -207,14 +228,9 @@ inline int32_t AdbInterface::Snoop16bitRegister(void)
   low_time = wait_data_hi(130);
   if (!low_time || low_time < 40 )
   { 
-    logmsg("---- Error: No stop bit. Low time (us): ", low_time); 
     return -4;
   }
-  else if(low_time < 70)
-  {
-    logmsg("---- Stop bit");
-  }
-  logmsg("---- End 16 bit snoop");
+
   return data;
 out:
   return -5;

@@ -16,6 +16,7 @@ uint32_t g_logpos;
 
 void log_raw(const char *str)
 {
+    mutex_enter_blocking(&log_mutex);
     // Keep log from reboot / bootloader if magic matches expected value
     if (g_log_magic != 0xAA55AA55)
     {
@@ -32,6 +33,7 @@ void log_raw(const char *str)
 
     // Keep buffer null-terminated
     g_logbuffer[g_logpos & LOGBUFMASK] = '\0';
+    mutex_exit(&log_mutex);
 }
 
 // Log byte as hex
@@ -40,6 +42,19 @@ void log_raw(uint8_t value)
     const char *nibble = "0123456789ABCDEF";
     char hexbuf[5] = {
         '0', 'x', 
+        nibble[(value >>  4) & 0xF], nibble[(value >>  0) & 0xF],
+        0
+    };
+    log_raw(hexbuf);
+}
+
+// Log uint16_t as hex
+void log_raw(uint16_t value)
+{
+    const char *nibble = "0123456789ABCDEF";
+    char hexbuf[11] = {
+        '0', 'x', 
+        nibble[(value >> 12) & 0xF], nibble[(value >>  8) & 0xF],
         nibble[(value >>  4) & 0xF], nibble[(value >>  0) & 0xF],
         0
     };
@@ -136,7 +151,7 @@ const char *log_get_buffer(uint32_t *startpos, uint32_t *available)
     {
         startpos = &default_pos;
     }
-
+    mutex_enter_blocking(&log_mutex);
     // Check oldest data available in buffer
     uint32_t lag = (g_logpos - *startpos);
     if (lag >= LOGBUFSIZE)
@@ -156,7 +171,6 @@ const char *log_get_buffer(uint32_t *startpos, uint32_t *available)
         {
             oldest = g_logpos;
         }
-
         *startpos = oldest;
     }
 
@@ -174,7 +188,7 @@ const char *log_get_buffer(uint32_t *startpos, uint32_t *available)
         // Buffer wraps, read to end of buffer now and start from beginning on next call.
         len = LOGBUFSIZE - (*startpos & LOGBUFMASK);
     }
-
+    mutex_exit(&log_mutex);
     if (available) { *available = len; }
     *startpos += len;
 
@@ -189,7 +203,8 @@ void log_poll()
     uint32_t available = 0;
     const char *data = log_get_buffer(&log_pos, &available);
     uint32_t len = available;
-    
+    if (len == 0) return;
+
     // Update log position by the actual number of bytes sent
     uint32_t actual = 0;
     actual = Serial1.write(data, len);

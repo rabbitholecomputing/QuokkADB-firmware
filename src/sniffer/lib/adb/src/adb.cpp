@@ -183,7 +183,7 @@ int16_t AdbInterface::ReceiveCommand(uint8_t srq)
   }
   else if (hi <= 380)
   {
-    logmsg("Receiving CMD: ", (uint8_t) data ,"-- SRQ");
+    logmsg("Receiving CMD: ", (uint8_t) data ," -- SRQ");
   }
   else 
   {
@@ -220,11 +220,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     {
       if (cmd == -100) 
       {
-        logmsg("ALL: Global 3ms reset signal");
-        if (global_debug)
-        {
-          Logmsg.println("ALL: Global 3ms reset signal");
-        }
+        logmsg("ALL: Global 3ms reset signal ---------------------------------------------------------");
       }
       return;
     }
@@ -250,6 +246,9 @@ void AdbInterface::ProcessCommand(int16_t cmd)
   // see if it is addressed to us
   uint8_t address_nibble =  (cmd >> 4) & 0x0F;
   uint8_t command_nibble = cmd & 0x0F; 
+ 
+  adb_cmd_t command_type;
+
   const char* info_string;
 
   const char info_reset[] = "Reset";
@@ -257,30 +256,39 @@ void AdbInterface::ProcessCommand(int16_t cmd)
   const char info_listen[] = "Listen";
   const char info_talk[] = "Talk";
 
-  const char* info_reg_string; 
+  const char *info_reg_string; 
   const char *reg_strings[] = {"Reg 0", "Reg 1", "Reg 2", "Reg 3"};
   
-  if (cmd == 0)
+  if (command_nibble == 0)
   {
+    command_type = adb_cmd_t::reset;
     info_string = info_reset;
   }
-  else if (cmd == 1)
+  else if (command_nibble == 1)
   {
+    command_type = adb_cmd_t::flush;
     info_string = info_flush;
+  }
+  else if (0x2 == ((command_nibble >> 2) & 0x3))
+  {
+    command_type = adb_cmd_t::listen;
+    info_string = info_listen;
+    info_reg_string = reg_strings[cmd & 0x3];
+  }
+  else if (0x3 == ((command_nibble >> 2) & 0x3))
+  {
+    command_type = adb_cmd_t::talk;
+    info_string = info_talk;
+    info_reg_string = reg_strings[cmd & 0x3];
   }
   else
   {
-    if (0x10 == ((cmd >> 2) & 0x3))
-    {
-      info_string = info_listen;
-    }
-    else
-    {
-      info_string = info_talk;
-    }
-    info_reg_string = reg_strings[cmd & 0x3];
+    command_type = adb_cmd_t::illegal;
+    logmsg("-- ERROR: Address: ", address_nibble, " [illegal cmd] raw cmd: ", command_nibble );
+    return;
   }
-  if (info_string == info_listen || info_string == info_talk)
+
+  if (command_type == adb_cmd_t::listen || command_type == adb_cmd_t::talk)
   {
     logmsg("-- Address: ", address_nibble, " ", info_string, " ", info_reg_string ," raw cmd: ", command_nibble );
   }
@@ -299,7 +307,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
   switch (command_nibble)
   {
   case 0x1:
-    Logmsg.println("MOUSE: Got FLUSH request");
+    logmsg("-- Got FLUSH request");
     break;
   case 0x8:
     Logmsg.println("MOUSE: Got LISTEN request for register 0");
@@ -312,7 +320,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     break;
   case 0xB:
     listen_register = Receive16bitRegister();
-    logmsg("-- Register 3 data: ", listen_register);
+    logmsg("-- Register 3 data: ", (uint16_t) listen_register);
 
     if (global_debug)
     {
@@ -339,7 +347,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
       // Change of address 
       if (0xFE == listen_handler_id )
       {
-        logmsg("-- Change of address, handler id 0xFE, new address: ", listen_addr);
+        logmsg("-- Change of address: ",address_nibble,", new address: ", listen_addr, " move handler id 0xFE");
         if (mouse_skip_next_listen_reg3)
         {
           mouse_skip_next_listen_reg3 = false;
@@ -379,7 +387,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     } 
     else
     {
-      logmsg("Listen Register 3 errored with code ", listen_register);
+      logmsg("-- Listen Register 3 errored with code ", listen_register);
 
       if (global_debug)
       {
@@ -393,7 +401,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     talk_register = Snoop16bitRegister();
     if (talk_register < 0)
     {
-      if (talk_register == -1)
+      if (talk_register == -100)
         logmsg(" -- No Data");
       else
         logmsg("-- Error: talk register 0 error num, ", talk_register);
@@ -439,16 +447,21 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     // sets device address
     talk_register = Receive16bitRegister();
     logmsg("-- Got TALK request for register 3, 0xF");
-    if (talk_register < 0)
+    if (talk_register == -100)
     {
-      logmsg("Talk register read error: ", talk_register);
+      logmsg("-- no response from device address: ",address_nibble ," queried");
       break;
     }
-    logmsg("-- talk reg 3: ", talk_register);
+    else if (talk_register < 0)
+    {
+      logmsg("-- Talk register read error: ", talk_register);
+      break;
+    }
+    logmsg("-- talk reg 3: ", (uint16_t) talk_register);
     srq_enabled = !!(talk_register & (1 << 14));
     unused_address = (talk_register >> 8) & 0xF;
     handler_id = talk_register & 0xF;
-    logmsg("-- If mouse SEQ_en: ", srq_enabled, " unused addr: ", unused_address, " handler id: ", handler_id );
+    logmsg("-- Reg 3 values Srq_en: ", srq_enabled, " device addr: ", unused_address, " handler id: ", handler_id );
     break;
   default:
     logmsg("Unknown cmd: ", command_nibble);
