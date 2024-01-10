@@ -35,7 +35,6 @@
 #include <Arduino.h>
 
 #include "pico/stdlib.h"
-#include <pico/multicore.h>
 #include "tusb.h"
 #include "host/usbh.h"
 #include "platform_logmsg.h"
@@ -77,22 +76,21 @@ FlashSettings setting_storage;
 /*------------ Pre Core0 and Core1 setup ------------*/
 void initVariant() 
 { 
+  Serial1.setTX(16);
+  Serial1.setRX(1);
   led_gpio_init();
-
+  adb_gpio_init();
+  setting_storage.init();
+  log_init();
+  srand(time_us_32());
 }
 
 /*------------ Core0 setup ------------*/
 void setup()
 {
-  set_sys_clock_khz(125000, true);
   blink_led.blink(1);
-  adb_gpio_init();
-  setting_storage.init();
-  uart_gpio_init();
-  log_init();
-  Serial1.begin();
   Logmsg.println(PLATFORM_FW_VER_STRING);
-  srand(time_us_32());
+
 }
 
 /*------------ Core0 main loop ------------*/

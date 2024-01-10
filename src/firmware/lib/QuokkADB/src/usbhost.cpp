@@ -150,3 +150,13 @@ void tuh_hid_set_report_complete_cb(uint8_t dev_addr, uint8_t instance, uint8_t 
 {
   set_hid_report_ready = true;
 }
+
+void tuh_mount_cb(uint8_t dev_addr) {
+  // application set-up
+  printf("A device with address %d is mounted\r\n", dev_addr);
+}
+
+void tuh_umount_cb(uint8_t dev_addr) {
+  // application tear-down
+  printf("A device with address %d is unmounted \r\n", dev_addr);
+}
