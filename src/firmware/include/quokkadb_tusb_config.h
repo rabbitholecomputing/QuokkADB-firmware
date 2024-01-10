@@ -43,7 +43,8 @@
 //--------------------------------------------------------------------
 
 #define CFG_TUSB_OS               OPT_OS_PICO
-#define CFG_TUSB_MCU              OPT_MCU_RP2040 
+#define CFG_TUSB_MCU              OPT_MCU_RP2040
+#define CFG_TUSB_RHPORT0_MODE     OPT_MODE_HOST
 
 // Enable host stack 
 #define CFG_TUH_ENABLED     1
@@ -78,8 +79,8 @@
 #define CFG_TUH_HUB                 7
 // max device support (excluding hub device)
 #define CFG_TUH_DEVICE_MAX          14 // hub typically has 4 ports
-#define CFG_TUH_HID                 4 // typical keyboard + mouse device can have 3-4 HID interfaces
-#define CFG_TUH_MSC                 0
+#define CFG_TUH_HID                 8 // typical keyboard + mouse device can have 3-4 HID interfaces
+#define CFG_TUH_MSC                 1
 
 #define CFG_TUH_HID_EPIN_BUFSIZE    64
 #define CFG_TUH_HID_EPOUT_BUFSIZE   64
