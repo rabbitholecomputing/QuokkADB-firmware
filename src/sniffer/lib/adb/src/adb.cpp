@@ -442,6 +442,8 @@ void AdbInterface::ProcessCommand(int16_t cmd)
     break;
   case 0xE: // talk register 2
     logmsg("-- Got TALK request for register 2, 0xE");
+    talk_register = Snoop16bitRegister();
+    logmsg("Talk register 2 is ", (uint32_t) talk_register);
     break;
   case 0xF: // talk register 3
     // sets device address
