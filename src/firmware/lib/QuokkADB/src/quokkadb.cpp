@@ -88,6 +88,7 @@ void setup()
   blink_led.blink(1);
   adb_gpio_init();
   setting_storage.init();
+  KeyboardPrs.setRegion((Region)setting_storage.settings()->region);
   uart_gpio_init();
   log_init();
   Serial1.begin();

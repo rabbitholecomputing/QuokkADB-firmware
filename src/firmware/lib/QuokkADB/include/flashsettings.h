@@ -36,7 +36,8 @@ struct __attribute((packed)) QuokkADBSettings
     uint8_t swap_modifiers: 1;
     uint8_t reserved_bits: 6;
     uint8_t sensitivity_divisor;
-    uint8_t reserved_bytes[252];
+    uint8_t region;
+    uint8_t reserved_bytes[251];
 };
 
 class FlashSettings

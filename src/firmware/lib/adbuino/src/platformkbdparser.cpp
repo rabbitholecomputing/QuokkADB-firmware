@@ -131,7 +131,7 @@ void PlatformKbdParser::SendString(const char * message)
 
         while(message[i] != '\0')        
         {
-                key = char_to_usb_keycode(message[i++]);
+                key = char_to_usb_keycode(message[i++], region);
 
                 if (key.shift_down) {
                         OnKeyDown(0, USB_KEY_LEFTSHIFT);

@@ -50,6 +50,7 @@ uint8_t inline findModifierKey(hid_keyboard_report_t const *report, const hid_ke
 PlatformKbdParser::PlatformKbdParser()
 {
     kbdLockingKeys.bLeds = 0;
+    region = RegionUS;
 }
 PlatformKbdParser::~PlatformKbdParser()
 {
@@ -168,15 +169,29 @@ void PlatformKbdParser::SetUSBkeyboardLEDs(bool capslock, bool numlock, bool scr
     usb_set_leds = true;
 }
 
+static void region_selection_string(char* print_buf, size_t len, Region region)
+{
+    snprintf(print_buf, len,
+        "Regions:\n"
+        " %c USA\n"
+        " %c France\n",
+        region == RegionUS ? '*' : '-',
+        region == RegionFR ? '*' : '-'
+    );
+}
+
 bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
 {
     // Special keycombo actions
-    const char ON_STRING[] = "On";
-    const char OFF_STRING[] = "Off";
+    static const char ON_STRING[] = "On";
+    static const char OFF_STRING[] = "Off";
+    static const char REGION_FR_STRING[] = "France";
+    static const char REGION_US_STRING[] = "USA";
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
-    uint8_t special_keys[] = {USB_KEY_V, USB_KEY_K, USB_KEY_L, USB_KEY_P, USB_KEY_EQUAL, USB_KEY_MINUS, USB_KEY_KPPLUS, USB_KEY_KPMINUS, USB_KEY_S, USB_KEY_R};
+    uint8_t special_keys[] = {USB_KEY_V, USB_KEY_K, USB_KEY_L, USB_KEY_P, USB_KEY_EQUAL, USB_KEY_MINUS, USB_KEY_KPPLUS, USB_KEY_KPMINUS, USB_KEY_S, USB_KEY_R, USB_KEY_G, USB_KEY_H};
     uint8_t caps_lock_down = false;
+    int16_t region_num;
     char print_buf[1024];
     for (uint8_t i = 0; i < 6; i++)
     {
@@ -217,6 +232,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "Current Settings\n"
                     "================\n"
                     "Command <-> Option key swap: %s\n"
+                    "Region: %s\n"
                     "LED: %s\n"
                     "Mouse Sensitivity Divisor: %u\n"
                     "(higher = less sensitive)\n"
@@ -225,13 +241,16 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "Alternate Keys = Ctrl + Cmd + Option + [Key]\n"
                     "------------------------------------------\n"
                     "[V]: print firmware version\n"
+                    "[H]: select next region\n"
+                    "[G]: select previous region\n"
                     "[S]: save settings to flash - LED blinks %d times\n"
                     "[R]: remove settings from flash - LED blinks %d times\n"
                     "[K]: swap option and command key positions\n"
                     "[L]: toggle status LED On/Off\n"
-                    "[+]: increase sensitivity\n"
-                    "[-]: decrease sensitivity\n",
+                    "[+]: increase mouse sensitivity\n"
+                    "[-]: decrease mouse sensitivity\n",
                     setting_storage.settings()->swap_modifiers ? ON_STRING : OFF_STRING,
+                    region == RegionFR ? REGION_FR_STRING : REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
                     SAVE_TO_FLASH_BLINK_COUNT,
@@ -267,6 +286,28 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
             else
                 setting_storage.settings()->sensitivity_divisor++;
             blink_led.blink(setting_storage.settings()->sensitivity_divisor);
+            break;
+        case USB_KEY_H:
+            region_num = setting_storage.settings()->region;
+            region_num++;
+            if (region_num > LAST_REGION)
+                region_num = 0;
+
+            setting_storage.settings()->region = region_num;
+            region = (Region) region_num;
+            region_selection_string(print_buf, sizeof(print_buf), region);
+            SendString(print_buf);
+            break;
+        case USB_KEY_G:
+            region_num = setting_storage.settings()->region;
+            region_num--;
+            if (region_num < 0)
+                region_num = LAST_REGION;
+
+            setting_storage.settings()->region = region_num;
+            region = (Region) region_num;
+            region_selection_string(print_buf, sizeof(print_buf), region);
+            SendString(print_buf);
             break;
         }
 
@@ -311,7 +352,7 @@ void PlatformKbdParser::SendString(const char *message)
         while (PendingKeyboardEvent())
             ;
 
-        key = char_to_usb_keycode(message[i++]);
+        key = char_to_usb_keycode(message[i++], region);
 
         if (key.shift_down)
         {
