@@ -79,7 +79,7 @@ usbkey_t char_to_usb_keycode(char character, Region region)
         if (region == RegionFR)
         {
             key.keycode = USB_KEY_COMMA;
-            key.shift_down = false;
+            key.shift_down = true;
         }
         return key;
     }

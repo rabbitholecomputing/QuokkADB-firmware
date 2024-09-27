@@ -80,7 +80,7 @@ bool PlatformKbdParser::SpecialKeyCombo()
         {
         case USB_KEY_V:
             SendString(PLATFORM_FW_VER_STRING);
-        break;       
+        break;
         }
         
         return true;
