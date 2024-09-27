@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include "tusb.h"
 #include "scqueue.h"
+#include <regions.h>
 
 using simple_circular_queue::SCQueue;
 
@@ -163,7 +164,8 @@ public:
         virtual void OnKeyUp(uint8_t mod __attribute__((unused)), uint8_t key __attribute__((unused))) = 0;
         virtual void OnControlKeysChanged(uint8_t before __attribute__((unused)), uint8_t after __attribute__((unused))) = 0;
 
-
+        virtual Region getRegion(){return region;}
+        virtual void setRegion(Region rgn){region = rgn;}
 protected:
         SCQueue<KeyEvent*, KEYBOARD_QUEUE_CAPACITY> m_keyboard_events; 
         
@@ -209,4 +211,6 @@ protected:
         const uint8_t *getPadKeys() {
                 return padKeys;
         };
+
+        Region region;
 };

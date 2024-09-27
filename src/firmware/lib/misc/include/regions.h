@@ -1,16 +1,15 @@
 //---------------------------------------------------------------------------
 //
-//	ADBuino & QuokkADB ADB keyboard and mouse adapter
-
-//	   Copyright (C) 2021-2022 akuker
-//     Copyright (C) 2022 Rabbit Hole Computing LLC
+//	QuokkADB ADB keyboard and mouse adapter
 //
-//  This file is part of the ADBuino and the QuokkADB projects.
+//     Copyright (C) 2024 Rabbit Hole Computing LLC
+//
+//  This file is part of QuokkADB.
 //
 //  This file is free software: you can redistribute it and/or modify it under 
 //  the terms of the GNU General Public License as published by the Free 
 //  Software Foundation, either version 3 of the License, or (at your option) 
-//  any later version.
+// any later version.
 //
 //  This file is distributed in the hope that it will be useful, but WITHOUT ANY 
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
@@ -18,19 +17,19 @@
 //  details.
 //
 //  You should have received a copy of the GNU General Public License along 
-//  with the file. If not, see <https://www.gnu.org/licenses/>.
+//  with this file. If not, see <https://www.gnu.org/licenses/>.
+//
+//  Portions of this code were originally released under a Modified BSD 
+//  License. See LICENSE in the root of this repository for more info.
 //
 //----------------------------------------------------------------------------
-#pragma once
 
-#include <stdint.h>
-#include <regions.h>
+#pragma once 
 
-struct usbkey_t
+#define LAST_REGION RegionFR
+enum Region
 {
-    uint8_t keycode;
-    bool shift_down;
+        RegionUS = 0,
+        RegionFR
 };
 
-
-usbkey_t char_to_usb_keycode(char character, Region region);

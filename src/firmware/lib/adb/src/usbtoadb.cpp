@@ -30,6 +30,8 @@
 #include "usb_hid_keys.h"
 #include <stdint.h>
 #include <Arduino.h>
+#include <regions.h>
+
 // #ifdef ADBUINO
 // #include <Arduino.h>
 #ifdef QUOKKADB
@@ -44,7 +46,7 @@ extern bool global_debug;
 
 // Virtual Keycodes for the Mac QWERTY Layout
 // Keycodes are in hexadecimal.
-uint8_t usb_keycode_to_adb_code(uint8_t usb_code)
+uint8_t usb_keycode_to_adb_code(uint8_t usb_code, Region region)
 {
     switch (usb_code)
     {
@@ -130,6 +132,12 @@ uint8_t usb_keycode_to_adb_code(uint8_t usb_code)
         return 0x28;
     case USB_KEY_SEMICOLON:
         return 0x29;
+    case USB_KEY_HASHTILDE:
+        // for now just fall through to Backslash
+        // if (region == RegionFR)
+        //     return 0x2A;
+        // else
+        //     return 0x2A;
     case USB_KEY_BACKSLASH:
         return 0x2A;
     case USB_KEY_COMMA:
@@ -146,8 +154,16 @@ uint8_t usb_keycode_to_adb_code(uint8_t usb_code)
         return 0x30;
     case USB_KEY_SPACE:
         return 0x31;
+    case  USB_KEY_102ND:
+        if (region == RegionFR)
+            return 0x32;
+        else
+            return 0x32; // current default is France for this ISO key
     case USB_KEY_GRAVE:
-        return 0x32;
+        if (region == RegionFR)
+            return 0xA0;
+        else
+            return 0x32; // RegionUS
     case USB_KEY_BACKSPACE:
         return 0x33;
     case USB_KEY_ESC:
