@@ -133,11 +133,7 @@ uint8_t usb_keycode_to_adb_code(uint8_t usb_code, Region region)
     case USB_KEY_SEMICOLON:
         return 0x29;
     case USB_KEY_HASHTILDE:
-        // for now just fall through to Backslash
-        // if (region == RegionFR)
-        //     return 0x2A;
-        // else
-        //     return 0x2A;
+        return 0x70;
     case USB_KEY_BACKSLASH:
         return 0x2A;
     case USB_KEY_COMMA:

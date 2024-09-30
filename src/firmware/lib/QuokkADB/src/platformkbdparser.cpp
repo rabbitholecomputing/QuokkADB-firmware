@@ -174,9 +174,13 @@ static void region_selection_string(char* print_buf, size_t len, Region region)
     snprintf(print_buf, len,
         "Regions:\n"
         " %c USA\n"
-        " %c France\n",
+        " %c France/Belgian\n"
+        " %c German\n"
+        " %c Swiss DE/FR\n",
         region == RegionUS ? '*' : '-',
-        region == RegionFR ? '*' : '-'
+        region == RegionFR ? '*' : '-',
+        region == RegionDE ? '*' : '-',
+        region == RegionCH ? '*' : '-'
     );
 }
 
@@ -185,13 +189,16 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
     // Special keycombo actions
     static const char ON_STRING[] = "On";
     static const char OFF_STRING[] = "Off";
-    static const char REGION_FR_STRING[] = "France";
+    static const char REGION_FR_STRING[] = "France/Belgium";
     static const char REGION_US_STRING[] = "USA";
+    static const char REGION_DE_STRING[] = "German";
+    static const char REGION_CH_STRING[] = "Swiss-DE/FR";
+
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
     uint8_t special_keys[] = {USB_KEY_V, USB_KEY_P, USB_KEY_H, USB_KEY_G, USB_KEY_S, USB_KEY_R, USB_KEY_T,
                               USB_KEY_K, USB_KEY_L, USB_KEY_KPPLUS, USB_KEY_EQUAL, USB_KEY_SLASH,
-                              USB_KEY_KPMINUS, USB_KEY_MINUS, USB_KEY_C, USB_KEY_D, USB_KEY_Y};
+                              USB_KEY_KPMINUS, USB_KEY_MINUS, USB_KEY_C, USB_KEY_D, USB_KEY_U};
     uint8_t caps_lock_down = false;
     int16_t region_num;
     char print_buf[1536];
@@ -257,18 +264,21 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "(-): decrease sensitivity - LED blink once\n"
                     "(T): swap right mouse button (RMB) function between Ctrl + LMB and ADB RMB\n"
                     "Blinks twice for Ctrl + LMB and blinks once for ADB RMB\n"
-                    "Note: In MacOS 8 and 9 you'll want Ctrl + LMB - ADB RMB might work in NeXTSTEP\n"
+                    "Note: In MacOS 8 and 9 you will want Ctrl + LMB - ADB RMB might work in NeXTSTEP\n"
                     "\n"
                     "Change mouse wheel count 'x' by one with 'C' or 'D'\n"
                     "If positive press the up/down arrow 'x' times for each wheel movement\n"
                     "If negative divide the mouse wheel movement by 'abs(x)'\n"
                     "(D): increase the mouse wheel count - LED blinks twice\n"
                     "(C): decrease the mouse wheel count - LED blink once\n"
-                    "(Y): flip mouse wheel axis - LED blinks thrice\n"
+                    "(U): flip mouse wheel axis - LED blinks thrice\n"
                     "Note: not all mice support the mouse wheel in HID boot protocol\n"
                     ,
                     setting_storage.settings()->swap_modifiers ? ON_STRING : OFF_STRING,
-                    region == RegionFR ? REGION_FR_STRING : REGION_US_STRING,
+                    region == RegionFR ? REGION_FR_STRING : 
+                    region == RegionDE ? REGION_DE_STRING :
+                    region == RegionCH ? REGION_CH_STRING :
+                      REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
                     setting_storage.settings()->ctrl_lmb ? "Ctrl+LBM" : "ADB RMB",
@@ -297,6 +307,8 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
             setting_storage.settings()->led_on ^= 1;
         else if (  (region == RegionUS && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_EQUAL))
                 || (region == RegionFR && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_SLASH))
+                || (region == RegionDE && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_RIGHTBRACE))
+                || (region == RegionCH && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_1))
         )
         {
             if (setting_storage.settings()->sensitivity_divisor <= 1)
@@ -307,6 +319,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
         }
         else if (  (region == RegionUS && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_MINUS))
                 || (region == RegionFR && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_EQUAL))
+                || ((region == RegionDE || region == RegionCH ) && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
         )
         {
             if (setting_storage.settings()->sensitivity_divisor >= 16)
@@ -371,7 +384,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                 blink_led.blink(2);
             }
         }
-        else if (special_key == USB_KEY_Y)
+        else if (special_key == USB_KEY_U)
         {
             setting_storage.settings()->swap_mouse_wheel_axis ^= 1;
             blink_led.blink(3);

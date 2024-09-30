@@ -41,19 +41,32 @@ static uint8_t alpha_azerty_usb_keycode(const char letter)
     return USB_KEY_A + tolower(letter) - 'a';
 }
 
+
+static uint8_t alpha_qwertz_usb_keycode(const char letter)
+{
+    switch (tolower(letter))
+    {
+        case 'z': return USB_KEY_Y;
+        case 'y': return USB_KEY_Z;
+        default: // do nothing
+            break;
+    }
+
+    return USB_KEY_A + tolower(letter) - 'a';
+}
+
 usbkey_t char_to_usb_keycode(char character, Region region)
 {
     usbkey_t key;
     if (character >= 'A' && character <= 'Z')
     {
         if (region == RegionUS)
-        {
             key.keycode = USB_KEY_A + (character - 'A');
-        }
-        if (region == RegionFR)
-        {
+        else if (region == RegionFR)
             key.keycode = alpha_azerty_usb_keycode(character);
-        }
+        else if (region == RegionDE || region == RegionCH)
+            key.keycode = alpha_qwertz_usb_keycode(character);
+
         key.shift_down = true;
         return key;
     }
@@ -62,8 +75,10 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     {
         if (region == RegionUS)
             key.keycode = USB_KEY_A + (character - 'a');
-        if (region == RegionFR)
+        else if (region == RegionFR)
             key.keycode = alpha_azerty_usb_keycode(character);
+        else if (region == RegionDE || region == RegionCH)
+            key.keycode = alpha_qwertz_usb_keycode(character);
 
         key.shift_down = false;
         return key;
@@ -71,26 +86,27 @@ usbkey_t char_to_usb_keycode(char character, Region region)
 
     if (character == '.')
     {
-        if (region == RegionUS)
-        {
-            key.keycode = USB_KEY_DOT;
-            key.shift_down = false;
-        }
         if (region == RegionFR)
         {
             key.keycode = USB_KEY_COMMA;
             key.shift_down = true;
         }
+        else
+        {
+            key.keycode = USB_KEY_DOT;
+            key.shift_down = false;
+        }
+
         return key;
     }
 
     if (character == '0')
     {
         key.keycode = USB_KEY_0;
-        if (region == RegionUS)
-            key.shift_down = false;
         if (region == RegionFR)
             key.shift_down = true;
+        else
+            key.shift_down = false;
 
         return key;
     }
@@ -98,25 +114,31 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     if (character >= '1' && character <= '9')
     {
         key.keycode = USB_KEY_1 + (character - '1');
-        if (region == RegionUS)
-            key.shift_down = false;
         if (region == RegionFR)
             key.shift_down = true;
+        else
+            key.shift_down = false;
         return key;
     }
 
     if (character == ':')
     {
-        if (region == RegionUS)
+        if (region == USB_KEY_SEMICOLON)
         {
             key.keycode = USB_KEY_SEMICOLON;
             key.shift_down = true;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR)
         {
             key.keycode = USB_KEY_DOT;
             key.shift_down = false;
         }
+        else if (region == RegionDE || region == RegionCH)
+        {
+            key.keycode = USB_KEY_DOT;
+            key.shift_down = true;
+        }
+
         return key;
     }
 
@@ -131,8 +153,11 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     {
         if (region == RegionUS)
             key.keycode = USB_KEY_MINUS;
-        if (region == RegionFR)
+        else if (region == RegionFR)
             key.keycode = USB_KEY_EQUAL;
+        else if (region == RegionDE || region == RegionCH)
+            key.keycode = USB_KEY_SLASH;
+
         key.shift_down = false;
         return key;
     }
@@ -141,8 +166,10 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     {
         if (region == RegionUS)
             key.keycode = USB_KEY_8;
-        if (region == RegionFR)
+        else if (region == RegionFR || region == RegionDE)
             key.keycode = USB_KEY_RIGHTBRACE;
+        else if (region == RegionCH)
+            key.keycode = USB_KEY_3;
         key.shift_down = true;
         return key;
     }
@@ -158,7 +185,7 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     {
         if (region == RegionUS)
             key.keycode = USB_KEY_LEFTBRACE;
-        if (region == RegionFR)
+        else if (region == RegionFR || region == RegionDE || region == RegionCH)
             key.keycode = USB_KEY_102ND;
         key.shift_down = false;
         return key;
@@ -171,7 +198,7 @@ usbkey_t char_to_usb_keycode(char character, Region region)
             key.keycode = USB_KEY_RIGHTBRACE;
             key.shift_down = false;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR || region == RegionDE || region == RegionCH)
         {
             key.keycode = USB_KEY_102ND;
             key.shift_down = true;
@@ -182,20 +209,45 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     if (character == '=')
     {
         if (region == RegionUS)
+        {
             key.keycode = USB_KEY_EQUAL;
-        if (region == RegionFR)
+            key.shift_down = false;
+        }
+        else if (region == RegionFR)
+        {
             key.keycode = USB_KEY_SLASH;
-        key.shift_down = false;
+            key.shift_down = false;
+        }
+        else if (region == RegionDE || region == RegionCH)
+        {
+            key.keycode = USB_KEY_0;
+            key.shift_down = true;
+        }
         return key;
     }
 
     if (character == '+')
     {
         if (region == RegionUS)
+        {
             key.keycode = USB_KEY_EQUAL;
-        if (region == RegionFR)
+            key.shift_down = true;
+        }
+        else if (region == RegionFR)
+        {
             key.keycode = USB_KEY_SLASH;
-        key.shift_down = true;
+            key.shift_down = true;
+        }
+        else if (region == RegionDE)
+        {
+            key.keycode = USB_KEY_RIGHTBRACE;
+            key.shift_down = false;
+        }
+        else if (region == RegionCH)
+        {
+            key.keycode = USB_KEY_1;
+            key.shift_down = true;
+        }
         return key;
     }
 
@@ -206,10 +258,15 @@ usbkey_t char_to_usb_keycode(char character, Region region)
             key.keycode = USB_KEY_9;
             key.shift_down = true;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR)
         {
             key.keycode = USB_KEY_5;
             key.shift_down = false;
+        }
+        else if (region == RegionDE || region == RegionCH)
+        {
+            key.keycode = USB_KEY_8;
+            key.shift_down = true;
         }
         return key;
     }
@@ -221,10 +278,15 @@ usbkey_t char_to_usb_keycode(char character, Region region)
             key.keycode = USB_KEY_0;
             key.shift_down = true;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR)
         {
             key.keycode = USB_KEY_MINUS;
             key.shift_down = false;
+        }
+        else if (region == RegionDE || region == RegionCH)
+        {
+            key.keycode = USB_KEY_9;
+            key.shift_down = true;
         }
 
         return key;
@@ -237,11 +299,17 @@ usbkey_t char_to_usb_keycode(char character, Region region)
             key.keycode = USB_KEY_SLASH;
             key.shift_down = false;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR)
         {
             key.keycode = USB_KEY_DOT;
             key.shift_down = true;
         }
+        else if (region == RegionDE || region == RegionCH)
+        {
+            key.keycode = USB_KEY_7;
+            key.shift_down = true;
+        }
+
         return key;
     }
 
@@ -252,7 +320,7 @@ usbkey_t char_to_usb_keycode(char character, Region region)
             key.keycode = USB_KEY_COMMA;
             key.shift_down = true;
         }
-        if (region == RegionFR)
+        else if (region == RegionFR || region == RegionDE || region == RegionCH)
         {
             key.keycode = USB_KEY_102ND;
             key.shift_down = false;
@@ -264,10 +332,36 @@ usbkey_t char_to_usb_keycode(char character, Region region)
     {
         if (region == RegionUS)
             key.keycode = USB_KEY_DOT;
-        if (region == RegionFR)
+        else if (region == RegionFR || region == RegionDE || region == RegionCH)
             key.keycode = USB_KEY_102ND;
 
         key.shift_down = true;
+        return key;
+    }
+
+    if (character == '\'')
+    {
+        if (region == RegionUS)
+        {
+            key.keycode = USB_KEY_APOSTROPHE;
+            key.shift_down = false;
+        }
+        else if (region == RegionFR)
+        {
+            key.keycode = USB_KEY_4;
+            key.shift_down = false;
+        }
+        else if (region == RegionDE)
+        {
+            // using double quotes because German keyboard don't have a single quote key
+            key.keycode = USB_KEY_2;
+            key.shift_down = true;
+        }
+        else if (region == RegionCH)
+        {
+            key.keycode = USB_KEY_MINUS;
+            key.shift_down = false;
+        }
         return key;
     }
 
