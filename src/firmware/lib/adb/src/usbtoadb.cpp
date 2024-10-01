@@ -133,9 +133,12 @@ uint8_t usb_keycode_to_adb_code(uint8_t usb_code, Region region)
     case USB_KEY_SEMICOLON:
         return 0x29;
     case USB_KEY_HASHTILDE:
-        return 0x70;
-    case USB_KEY_BACKSLASH:
         return 0x2A;
+    case USB_KEY_BACKSLASH:
+        if (region == RegionUS)
+            return 0x2A;
+        else
+            return 0x70;
     case USB_KEY_COMMA:
         return 0x2B;
     case USB_KEY_SLASH:
@@ -151,15 +154,13 @@ uint8_t usb_keycode_to_adb_code(uint8_t usb_code, Region region)
     case USB_KEY_SPACE:
         return 0x31;
     case  USB_KEY_102ND:
-        if (region == RegionFR)
+        // non-US key
+        return 0x32;
+    case USB_KEY_GRAVE:
+        if (region == RegionUS)
             return 0x32;
         else
-            return 0x32; // current default is France for this ISO key
-    case USB_KEY_GRAVE:
-        if (region == RegionFR)
-            return 0xA0;
-        else
-            return 0x32; // RegionUS
+            return 0x0A;
     case USB_KEY_BACKSPACE:
         return 0x33;
     case USB_KEY_ESC:

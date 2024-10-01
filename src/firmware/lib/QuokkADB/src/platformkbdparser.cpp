@@ -174,13 +174,15 @@ static void region_selection_string(char* print_buf, size_t len, Region region)
     snprintf(print_buf, len,
         "Regions:\n"
         " %c USA\n"
-        " %c France/Belgian\n"
+        " %c Belgium/France\n"
         " %c German\n"
-        " %c Swiss DE/FR\n",
+        " %c Swiss DE/FR\n"
+        " %c Denmark\n",
         region == RegionUS ? '*' : '-',
         region == RegionFR ? '*' : '-',
         region == RegionDE ? '*' : '-',
-        region == RegionCH ? '*' : '-'
+        region == RegionCH ? '*' : '-',
+        region == RegionDK ? '*' : '-'
     );
 }
 
@@ -193,12 +195,14 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
     static const char REGION_US_STRING[] = "USA";
     static const char REGION_DE_STRING[] = "German";
     static const char REGION_CH_STRING[] = "Swiss-DE/FR";
+    static const char REGION_DK_STRING[] = "Denmark";
 
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
     uint8_t special_keys[] = {USB_KEY_V, USB_KEY_P, USB_KEY_H, USB_KEY_G, USB_KEY_S, USB_KEY_R, USB_KEY_T,
-                              USB_KEY_K, USB_KEY_L, USB_KEY_KPPLUS, USB_KEY_EQUAL, USB_KEY_SLASH,
-                              USB_KEY_KPMINUS, USB_KEY_MINUS, USB_KEY_C, USB_KEY_D, USB_KEY_U};
+                              USB_KEY_K, USB_KEY_L, USB_KEY_KPPLUS, USB_KEY_EQUAL, USB_KEY_SLASH, USB_KEY_1, USB_KEY_RIGHTBRACE,
+                              USB_KEY_KPMINUS, USB_KEY_MINUS, USB_KEY_C, USB_KEY_D, USB_KEY_U,
+                              };
     uint8_t caps_lock_down = false;
     int16_t region_num;
     char print_buf[1536];
@@ -241,7 +245,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "Current Settings\n"
                     "================\n"
                     "Command <-> Option key swap: %s\n"
-                    "Region: %s\n"
+                    "Layout: %s\n"
                     "LED: %s\n"
                     "Mouse Sensitivity Divisor: %u\n"
                     "(higher = less sensitive)\n"
@@ -254,8 +258,8 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "------------------------------------------\n"
                     "(V): print firmware version\n"
                     "(P): print current settings (this message)\n"
-                    "(H): select next region\n"
-                    "(G): select previous region\n"
+                    "(H): select next region layout\n"
+                    "(G): select previous region layout\n"
                     "(S): save settings to flash - LED blinks %d times\n"
                     "(R): remove settings from flash - LED blinks %d times\n"
                     "(K): swap option and command key positions - LED blinks thrice\n"
@@ -278,6 +282,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     region == RegionFR ? REGION_FR_STRING : 
                     region == RegionDE ? REGION_DE_STRING :
                     region == RegionCH ? REGION_CH_STRING :
+                    region == RegionDK ? REGION_DK_STRING :
                       REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
@@ -309,6 +314,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                 || (region == RegionFR && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_SLASH))
                 || (region == RegionDE && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_RIGHTBRACE))
                 || (region == RegionCH && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_1))
+                || (region == RegionDK && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_MINUS))
         )
         {
             if (setting_storage.settings()->sensitivity_divisor <= 1)
@@ -319,7 +325,8 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
         }
         else if (  (region == RegionUS && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_MINUS))
                 || (region == RegionFR && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_EQUAL))
-                || ((region == RegionDE || region == RegionCH ) && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
+                || ((region == RegionDE || region == RegionCH || region == RegionDK) 
+                    && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
         )
         {
             if (setting_storage.settings()->sensitivity_divisor >= 16)
