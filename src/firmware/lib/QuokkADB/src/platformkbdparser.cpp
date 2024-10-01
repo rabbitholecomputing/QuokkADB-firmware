@@ -169,37 +169,45 @@ void PlatformKbdParser::SetUSBkeyboardLEDs(bool capslock, bool numlock, bool scr
     usb_set_leds = true;
 }
 
+
+static const char ON_STRING[] = "On";
+static const char OFF_STRING[] = "Off";
+static const char REGION_US_STRING[] = "USA";
+static const char REGION_FR_STRING[] = "Belgium/France";
+static const char REGION_DE_STRING[] = "German";
+static const char REGION_CH_STRING[] = "Swiss-DE/FR";
+static const char REGION_DK_STRING[] = "Denmark";
+static const char REGION_UK_STRING[] = "Ireland/UK";
+static const char REGION_IT_QZ_STRING[] = "Italy-QZERTY";
+static const char REGION_IT_QW_STRING[] = "Italy-QWERTY";
+
 static void region_selection_string(char* print_buf, size_t len, Region region)
 {
     snprintf(print_buf, len,
         "Regions:\n"
-        " %c USA\n"
-        " %c Belgium/France\n"
-        " %c German\n"
-        " %c Swiss DE/FR\n"
-        " %c Denmark\n"
-        " %c Ireland/UK\n",
-        region == RegionUS ? '*' : '-',
-        region == RegionFR ? '*' : '-',
-        region == RegionDE ? '*' : '-',
-        region == RegionCH ? '*' : '-',
-        region == RegionDK ? '*' : '-',
-        region == RegionUK ? '*' : '-'
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n",
+        region == RegionUS ? '*' : '-', REGION_US_STRING,
+        region == RegionFR ? '*' : '-', REGION_FR_STRING,
+        region == RegionDE ? '*' : '-', REGION_DE_STRING,
+        region == RegionCH ? '*' : '-', REGION_CH_STRING,
+        region == RegionDK ? '*' : '-', REGION_DK_STRING,
+        region == RegionUK ? '*' : '-', REGION_UK_STRING,
+        region == RegionITqz ? '*' : '-', REGION_IT_QZ_STRING,
+        region == RegionITqw ? '*' : '-', REGION_IT_QW_STRING
+
     );
 }
 
 bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
 {
     // Special keycombo actions
-    static const char ON_STRING[] = "On";
-    static const char OFF_STRING[] = "Off";
-    static const char REGION_FR_STRING[] = "Belgium/France";
-    static const char REGION_US_STRING[] = "USA";
-    static const char REGION_DE_STRING[] = "German";
-    static const char REGION_CH_STRING[] = "Swiss-DE/FR";
-    static const char REGION_DK_STRING[] = "Denmark";
-    static const char REGION_UK_STRING[] = "Ireland/UK";
-
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
     uint8_t special_keys[] = {USB_KEY_V, USB_KEY_P, USB_KEY_H, USB_KEY_G, USB_KEY_S, USB_KEY_R, USB_KEY_T,
