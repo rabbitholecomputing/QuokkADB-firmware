@@ -26,13 +26,14 @@
 
 #pragma once 
 
-#define LAST_REGION RegionDK
+#define LAST_REGION RegionUK
 enum Region
 {
         RegionUS = 0,
         RegionFR,
         RegionDE,
         RegionCH,
+        RegionDK,
         LAST_REGION
 };
 

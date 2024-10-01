@@ -177,12 +177,14 @@ static void region_selection_string(char* print_buf, size_t len, Region region)
         " %c Belgium/France\n"
         " %c German\n"
         " %c Swiss DE/FR\n"
-        " %c Denmark\n",
+        " %c Denmark\n"
+        " %c Ireland/UK\n",
         region == RegionUS ? '*' : '-',
         region == RegionFR ? '*' : '-',
         region == RegionDE ? '*' : '-',
         region == RegionCH ? '*' : '-',
-        region == RegionDK ? '*' : '-'
+        region == RegionDK ? '*' : '-',
+        region == RegionUK ? '*' : '-'
     );
 }
 
@@ -191,11 +193,12 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
     // Special keycombo actions
     static const char ON_STRING[] = "On";
     static const char OFF_STRING[] = "Off";
-    static const char REGION_FR_STRING[] = "France/Belgium";
+    static const char REGION_FR_STRING[] = "Belgium/France";
     static const char REGION_US_STRING[] = "USA";
     static const char REGION_DE_STRING[] = "German";
     static const char REGION_CH_STRING[] = "Swiss-DE/FR";
     static const char REGION_DK_STRING[] = "Denmark";
+    static const char REGION_UK_STRING[] = "Ireland/UK";
 
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
@@ -283,6 +286,7 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     region == RegionDE ? REGION_DE_STRING :
                     region == RegionCH ? REGION_CH_STRING :
                     region == RegionDK ? REGION_DK_STRING :
+                    region == RegionUK ? REGION_UK_STRING :
                       REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
@@ -310,7 +314,8 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
         }
         else if (special_key == USB_KEY_L)
             setting_storage.settings()->led_on ^= 1;
-        else if (  (region == RegionUS && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_EQUAL))
+        else if (  ((region == RegionUS || region == RegionUK) 
+                        && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_EQUAL))
                 || (region == RegionFR && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_SLASH))
                 || (region == RegionDE && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_RIGHTBRACE))
                 || (region == RegionCH && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_1))
@@ -323,10 +328,11 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                 setting_storage.settings()->sensitivity_divisor--;
             blink_led.blink(2);
         }
-        else if (  (region == RegionUS && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_MINUS))
+        else if (  ((region == RegionUS || region == RegionUK)
+                        && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_MINUS))
                 || (region == RegionFR && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_EQUAL))
-                || ((region == RegionDE || region == RegionCH || region == RegionDK) 
-                    && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
+                || ((region == RegionDE || region == RegionCH || region == RegionDK)
+                        && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
         )
         {
             if (setting_storage.settings()->sensitivity_divisor >= 16)
