@@ -290,12 +290,14 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
                     "Note: not all mice support the mouse wheel in HID boot protocol\n"
                     ,
                     setting_storage.settings()->swap_modifiers ? ON_STRING : OFF_STRING,
-                    region == RegionFR ? REGION_FR_STRING : 
-                    region == RegionDE ? REGION_DE_STRING :
-                    region == RegionCH ? REGION_CH_STRING :
-                    region == RegionDK ? REGION_DK_STRING :
-                    region == RegionUK ? REGION_UK_STRING :
-                      REGION_US_STRING,
+                    region == RegionFR   ? REGION_FR_STRING :
+                    region == RegionDE   ? REGION_DE_STRING :
+                    region == RegionCH   ? REGION_CH_STRING :
+                    region == RegionDK   ? REGION_DK_STRING :
+                    region == RegionUK   ? REGION_UK_STRING :
+                    region == RegionITqz ? REGION_IT_QZ_STRING :
+                    region == RegionITqw ? REGION_IT_QW_STRING :
+                                           REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
                     setting_storage.settings()->ctrl_lmb ? "Ctrl+LBM" : "ADB RMB",
