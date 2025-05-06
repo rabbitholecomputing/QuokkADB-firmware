@@ -41,7 +41,7 @@ using simple_circular_queue::SCQueue;
 // Queue length if using a machine USB clicker 160
 // Queue length for humans ~ 5
 // Using 10
-#define MOUSE_CLICK_QUEUE_CAPACITY (10)
+#define MOUSE_CLICK_QUEUE_CAPACITY (256)
 
 //----------------------------------------------------------------------------
 // Mouse handler
@@ -57,6 +57,7 @@ struct MOUSEINFO {
         };
         int8_t dX;
         int8_t dY;
+        int8_t dWheel;
 };
 
 struct MOUSE_CLICK
@@ -67,11 +68,7 @@ struct MOUSE_CLICK
                 uint8_t bmMiddleButton : 1;
                 uint8_t bmDummy : 5;
         };
-};
-
-enum class MouseRightBtnMode {
-    ctrl_click,
-    right_click
+        int8_t dWheel;
 };
 
 class PlatformMouseParser {
@@ -119,5 +116,4 @@ protected:
         int32_t m_x = 0;
         int32_t m_y = 0;
 
-        MouseRightBtnMode m_right_btn_mode = MouseRightBtnMode::ctrl_click;
 };

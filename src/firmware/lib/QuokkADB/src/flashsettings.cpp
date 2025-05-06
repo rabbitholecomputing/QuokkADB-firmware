@@ -70,6 +70,10 @@ void FlashSettings::reset()
     _settings.led_on = 1;
     _settings.swap_modifiers = 0;
     _settings.sensitivity_divisor = DEFAULT_MOUSE_SENSITIVITY_DIVISOR;
+    _settings.ctrl_lmb = 1;
+    _settings.region = 0;
+    _settings.swap_mouse_wheel_axis = 0;
+    _settings.mouse_wheel_count = 1;
 }
 
 void FlashSettings::write_settings_page(uint8_t *buf)

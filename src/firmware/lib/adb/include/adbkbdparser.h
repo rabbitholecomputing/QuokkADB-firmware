@@ -36,7 +36,7 @@
 
 using simple_circular_queue::SCQueue;
 
-extern uint8_t usb_keycode_to_adb_code(uint8_t usb_code);
+extern uint8_t usb_keycode_to_adb_code(uint8_t usb_code, Region region);
 
 
 class ADBKbdRptParser : public KbdRptParser

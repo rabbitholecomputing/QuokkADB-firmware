@@ -25,7 +25,7 @@
 #pragma once
 
 // Use macros for version number
-#define FW_VER_NUM      "1.1.0"
+#define FW_VER_NUM      "2.0.0"
 #define FW_VER_SUFFIX   "release"
 #define PLATFORM_FW_VERSION FW_VER_NUM "-" FW_VER_SUFFIX 
 #define PRODUCT_NAME "QuokkADB"

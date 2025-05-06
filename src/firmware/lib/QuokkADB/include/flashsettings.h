@@ -32,11 +32,15 @@
 struct __attribute((packed)) QuokkADBSettings 
 {
     uint16_t magic_number;
-    uint8_t led_on: 1;
-    uint8_t swap_modifiers: 1;
-    uint8_t reserved_bits: 6;
-    uint8_t sensitivity_divisor;
-    uint8_t reserved_bytes[252];
+    uint8_t  led_on: 1;
+    uint8_t  swap_modifiers: 1;
+    uint8_t  swap_mouse_wheel_axis: 1;
+    uint8_t  ctrl_lmb: 1;
+    uint8_t  reserved_bits: 4;
+    uint8_t  sensitivity_divisor;
+    uint8_t  region;
+    int8_t   mouse_wheel_count;
+    uint8_t  reserved_bytes[250];
 };
 
 class FlashSettings

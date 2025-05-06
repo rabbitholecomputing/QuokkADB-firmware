@@ -50,6 +50,7 @@ uint8_t inline findModifierKey(hid_keyboard_report_t const *report, const hid_ke
 PlatformKbdParser::PlatformKbdParser()
 {
     kbdLockingKeys.bLeds = 0;
+    region = RegionUS;
 }
 PlatformKbdParser::~PlatformKbdParser()
 {
@@ -168,16 +169,56 @@ void PlatformKbdParser::SetUSBkeyboardLEDs(bool capslock, bool numlock, bool scr
     usb_set_leds = true;
 }
 
+
+static const char ON_STRING[] = "On";
+static const char OFF_STRING[] = "Off";
+static const char REGION_US_STRING[] = "USA";
+static const char REGION_FR_STRING[] = "Belgium/France";
+static const char REGION_DE_STRING[] = "German";
+static const char REGION_CH_STRING[] = "Swiss-DE/FR";
+static const char REGION_DK_STRING[] = "Denmark";
+static const char REGION_UK_STRING[] = "Ireland/UK";
+static const char REGION_IT_QZ_STRING[] = "Italy-QZERTY";
+static const char REGION_IT_QW_STRING[] = "Italy-QWERTY";
+
+static void region_selection_string(char* print_buf, size_t len, Region region)
+{
+    snprintf(print_buf, len,
+        "Regions:\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n"
+        " %c %s\n",
+        region == RegionUS ? '*' : '-', REGION_US_STRING,
+        region == RegionFR ? '*' : '-', REGION_FR_STRING,
+        region == RegionDE ? '*' : '-', REGION_DE_STRING,
+        region == RegionCH ? '*' : '-', REGION_CH_STRING,
+        region == RegionDK ? '*' : '-', REGION_DK_STRING,
+        region == RegionUK ? '*' : '-', REGION_UK_STRING,
+        region == RegionITqz ? '*' : '-', REGION_IT_QZ_STRING,
+        region == RegionITqw ? '*' : '-', REGION_IT_QW_STRING
+
+    );
+}
+
 bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
 {
     // Special keycombo actions
-    const char ON_STRING[] = "On";
-    const char OFF_STRING[] = "Off";
     uint8_t special_key_count = 0;
     uint8_t special_key = 0;
-    uint8_t special_keys[] = {USB_KEY_V, USB_KEY_K, USB_KEY_L, USB_KEY_P, USB_KEY_EQUAL, USB_KEY_MINUS, USB_KEY_KPPLUS, USB_KEY_KPMINUS, USB_KEY_S, USB_KEY_R};
+    uint8_t special_keys[] = {USB_KEY_V, USB_KEY_P, USB_KEY_H, USB_KEY_G, USB_KEY_S, USB_KEY_R, USB_KEY_T,
+                              USB_KEY_K, USB_KEY_L, USB_KEY_KPPLUS, USB_KEY_EQUAL, USB_KEY_SLASH, USB_KEY_1, USB_KEY_RIGHTBRACE,
+                              USB_KEY_KPMINUS, USB_KEY_MINUS, USB_KEY_C, USB_KEY_D, USB_KEY_U,
+                              };
     uint8_t caps_lock_down = false;
-    char print_buf[1024];
+    int16_t region_num;
+    char print_buf[1536];
+
+
     for (uint8_t i = 0; i < 6; i++)
     {
         if (cur_kbd_info->Keys[i] == USB_KEY_CAPSLOCK)
@@ -205,71 +246,174 @@ bool PlatformKbdParser::SpecialKeyCombo(KBDINFO *cur_kbd_info)
 
 
     if (special_key_count == 1 && (enter_shortcut1 || enter_shortcut2))
-
     {
-        switch (special_key)
-        {
-        case USB_KEY_V:
+        
+        if (special_key == USB_KEY_V)
             SendString(PLATFORM_FW_VER_STRING);
-            break;
-        case USB_KEY_P:
+        else if (special_key == USB_KEY_P)
+        {
             snprintf(print_buf, sizeof(print_buf),
                     "Current Settings\n"
                     "================\n"
                     "Command <-> Option key swap: %s\n"
+                    "Layout: %s\n"
                     "LED: %s\n"
                     "Mouse Sensitivity Divisor: %u\n"
                     "(higher = less sensitive)\n"
+                    "Right Mouse Button: %s\n"
+                    "Mouse wheel count: %d\n"
+                    "Flip mouse wheel axis: %s\n"
                     "\n"
-                    "Special Keys = CAPS + Ctrl + Shift + [Key]\n"
-                    "Alternate Keys = Ctrl + Cmd + Option + [Key]\n"
+                    "Special Keys = CAPS + Ctrl + Shift + (Key)\n"
+                    "Alternate Keys = Ctrl + Cmd + Option + (Key)\n"
                     "------------------------------------------\n"
-                    "[V]: print firmware version\n"
-                    "[S]: save settings to flash - LED blinks %d times\n"
-                    "[R]: remove settings from flash - LED blinks %d times\n"
-                    "[K]: swap option and command key positions\n"
-                    "[L]: toggle status LED On/Off\n"
-                    "[+]: increase sensitivity\n"
-                    "[-]: decrease sensitivity\n",
+                    "(V): print firmware version\n"
+                    "(P): print current settings (this message)\n"
+                    "(H): select next region layout\n"
+                    "(G): select previous region layout\n"
+                    "(S): save settings to flash - LED blinks %d times\n"
+                    "(R): remove settings from flash - LED blinks %d times\n"
+                    "(K): swap option and command key positions - LED blinks thrice\n"
+                    "(L): toggle status LED On/Off\n"
+                    "(+): increase sensitivity - LED blinks twice\n"
+                    "(-): decrease sensitivity - LED blink once\n"
+                    "(T): swap right mouse button (RMB) function between Ctrl + LMB and ADB RMB\n"
+                    "Blinks twice for Ctrl + LMB and blinks once for ADB RMB\n"
+                    "Note: In MacOS 8 and 9 you will want Ctrl + LMB - ADB RMB might work in NeXTSTEP\n"
+                    "\n"
+                    "Change mouse wheel count 'x' by one with 'C' or 'D'\n"
+                    "If positive press the up/down arrow 'x' times for each wheel movement\n"
+                    "If negative divide the mouse wheel movement by 'abs(x)'\n"
+                    "(D): increase the mouse wheel count - LED blinks twice\n"
+                    "(C): decrease the mouse wheel count - LED blink once\n"
+                    "(U): flip mouse wheel axis - LED blinks thrice\n"
+                    "Note: not all mice support the mouse wheel in HID boot protocol\n"
+                    ,
                     setting_storage.settings()->swap_modifiers ? ON_STRING : OFF_STRING,
+                    region == RegionFR   ? REGION_FR_STRING :
+                    region == RegionDE   ? REGION_DE_STRING :
+                    region == RegionCH   ? REGION_CH_STRING :
+                    region == RegionDK   ? REGION_DK_STRING :
+                    region == RegionUK   ? REGION_UK_STRING :
+                    region == RegionITqz ? REGION_IT_QZ_STRING :
+                    region == RegionITqw ? REGION_IT_QW_STRING :
+                                           REGION_US_STRING,
                     setting_storage.settings()->led_on ? ON_STRING : OFF_STRING,
                     setting_storage.settings()->sensitivity_divisor,
+                    setting_storage.settings()->ctrl_lmb ? "Ctrl+LBM" : "ADB RMB",
+                    setting_storage.settings()->mouse_wheel_count,
+                    setting_storage.settings()->swap_mouse_wheel_axis ? ON_STRING : OFF_STRING,
                     SAVE_TO_FLASH_BLINK_COUNT,
                     CLEAR_FLASH_BLINK_COUNT);
             SendString(print_buf);
-            break;
-        case USB_KEY_S:
+        }
+        else if (special_key == USB_KEY_S)
+        {
             setting_storage.save();
             blink_led.blink(SAVE_TO_FLASH_BLINK_COUNT);
-            break;
-        case USB_KEY_R:
+        }
+        else if (special_key == USB_KEY_R)
+        {
             setting_storage.clear();
             blink_led.blink(CLEAR_FLASH_BLINK_COUNT);
-            break;
-        case USB_KEY_K:
+        }
+        else if (special_key == USB_KEY_K)
+        {
             setting_storage.settings()->swap_modifiers ^= 1;
-            break;
-        case USB_KEY_L:
+            blink_led.blink(3);
+        }
+        else if (special_key == USB_KEY_L)
             setting_storage.settings()->led_on ^= 1;
-            break;
-        case USB_KEY_KPPLUS:
-        case USB_KEY_EQUAL:
+        else if (  ((region == RegionUS || region == RegionUK) 
+                        && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_EQUAL))
+                || (region == RegionFR && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_SLASH))
+                || (region == RegionDE && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_RIGHTBRACE))
+                || (region == RegionCH && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_1))
+                || (region == RegionDK && (special_key == USB_KEY_KPPLUS || special_key == USB_KEY_MINUS))
+        )
+        {
             if (setting_storage.settings()->sensitivity_divisor <= 1)
                 setting_storage.settings()->sensitivity_divisor = 1;
             else
                 setting_storage.settings()->sensitivity_divisor--;
-            blink_led.blink(setting_storage.settings()->sensitivity_divisor);
-            break;
-        case USB_KEY_KPMINUS:
-        case USB_KEY_MINUS:
+            blink_led.blink(2);
+        }
+        else if (  ((region == RegionUS || region == RegionUK)
+                        && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_MINUS))
+                || (region == RegionFR && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_EQUAL))
+                || ((region == RegionDE || region == RegionCH || region == RegionDK)
+                        && (special_key == USB_KEY_KPMINUS || special_key == USB_KEY_SLASH))
+        )
+        {
             if (setting_storage.settings()->sensitivity_divisor >= 16)
                 setting_storage.settings()->sensitivity_divisor = 16;
             else
                 setting_storage.settings()->sensitivity_divisor++;
-            blink_led.blink(setting_storage.settings()->sensitivity_divisor);
-            break;
+            blink_led.blink(1);
         }
+        else if (special_key == USB_KEY_H)
+        {
+            region_num = setting_storage.settings()->region;
+            region_num++;
+            if (region_num > LAST_REGION)
+                region_num = 0;
 
+            setting_storage.settings()->region = region_num;
+            region = (Region) region_num;
+            region_selection_string(print_buf, sizeof(print_buf), region);
+            SendString(print_buf);
+        }
+        else if (special_key == USB_KEY_G)
+        {
+            region_num = setting_storage.settings()->region;
+            region_num--;
+            if (region_num < 0)
+                region_num = LAST_REGION;
+
+            setting_storage.settings()->region = region_num;
+            region = (Region) region_num;
+            region_selection_string(print_buf, sizeof(print_buf), region);
+            SendString(print_buf);
+        }
+        else if (special_key == USB_KEY_T)
+        {
+            setting_storage.settings()->ctrl_lmb ^= 1;
+            if (setting_storage.settings()->ctrl_lmb == 1)
+                blink_led.blink(2);
+            else
+                blink_led.blink(1);
+        }
+        else if (special_key == USB_KEY_C)
+        {
+            if (setting_storage.settings()->mouse_wheel_count <= -8)
+            {
+                setting_storage.settings()->mouse_wheel_count = -8;
+            }
+            else
+            {
+                setting_storage.settings()->mouse_wheel_count--;
+                blink_led.blink(1);
+            }
+        }
+        else if (special_key == USB_KEY_D)
+        {
+            if (setting_storage.settings()->mouse_wheel_count >= 10)
+            {
+                setting_storage.settings()->mouse_wheel_count = 10;
+            }
+            else
+            {
+                setting_storage.settings()->mouse_wheel_count++;
+                blink_led.blink(2);
+            }
+        }
+        else if (special_key == USB_KEY_U)
+        {
+            setting_storage.settings()->swap_mouse_wheel_axis ^= 1;
+            blink_led.blink(3);
+        }
+        else
+            return false;
         return true;
     }
     return false;
@@ -311,7 +455,7 @@ void PlatformKbdParser::SendString(const char *message)
         while (PendingKeyboardEvent())
             ;
 
-        key = char_to_usb_keycode(message[i++]);
+        key = char_to_usb_keycode(message[i++], region);
 
         if (key.shift_down)
         {

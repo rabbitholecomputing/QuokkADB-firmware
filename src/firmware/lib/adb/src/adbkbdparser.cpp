@@ -59,7 +59,7 @@ uint16_t ADBKbdRptParser::GetAdbRegister0()
         {
             B_SET(kbdreg0, ADB_REG_0_KEY_1_STATUS_BIT);
         }
-        adb_keycode = usb_keycode_to_adb_code(event->GetKeycode());
+        adb_keycode = usb_keycode_to_adb_code(event->GetKeycode(), getRegion());
         kbdreg0 |= (adb_keycode << ADB_REG_0_KEY_1_KEY_CODE);
         delete(event);
     }
@@ -80,14 +80,14 @@ uint16_t ADBKbdRptParser::GetAdbRegister0()
             event = m_keyboard_events.peek();
             // if the first key wasn't the power key but the second one is, skip the second key packing
             // so on the next cycle the power key will be packed as both the first and second key
-            if (event != NULL && usb_keycode_to_adb_code(event->GetKeycode()) != ADB_POWER_KEYCODE)
+            if (event != NULL && usb_keycode_to_adb_code(event->GetKeycode(), getRegion()) != ADB_POWER_KEYCODE)
             {
                 event = m_keyboard_events.dequeue();
                 if (event->IsKeyUp())
                 {
                     B_SET(kbdreg0, ADB_REG_0_KEY_2_STATUS_BIT); 
                 }
-                adb_keycode = usb_keycode_to_adb_code(event->GetKeycode());
+                adb_keycode = usb_keycode_to_adb_code(event->GetKeycode(), getRegion());
                 kbdreg0 |= (adb_keycode << ADB_REG_0_KEY_2_KEY_CODE);
                 free(event);
             }

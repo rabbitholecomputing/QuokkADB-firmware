@@ -35,6 +35,7 @@
 #include "flashsettings.h"
 #include <usb_hid_keys.h>
 
+#define ENQUEUE_RETRY_TIMEOUT 3000
 extern FlashSettings setting_storage;
 
 int8_t PlatformMouseParser::AdjustMovement(int32_t& axis)
@@ -75,6 +76,8 @@ void PlatformMouseParser::Parse(const hid_mouse_report_t *report){
     m_x += mouse_info.dX;
     m_y += mouse_info.dY;
 
+    mouse_info.dWheel = report->wheel;
+
     auto significant_motion = (m_x >= sensitivity_divisor || m_x <= -sensitivity_divisor || m_y >= sensitivity_divisor || m_y <= -sensitivity_divisor);
 
     if(mouse_info.dX != 0 || mouse_info.dY != 0) {
@@ -107,100 +110,197 @@ void PlatformMouseParser::Parse(const hid_mouse_report_t *report){
 
     if (!prevState.mouseInfo.bmMiddleButton && mouse_info.bmMiddleButton) {
         OnMiddleButtonDown(&mouse_info);
-        switch (m_right_btn_mode)
-        {
-            case MouseRightBtnMode::ctrl_click :
-                m_right_btn_mode = MouseRightBtnMode::right_click;
-            break;
-            case MouseRightBtnMode::right_click :
-                m_right_btn_mode = MouseRightBtnMode::ctrl_click;
-            break;
-        }
+        setting_storage.settings()->ctrl_lmb ^= 1;
     }
 
     if (!prevState.mouseInfo.bmMiddleButton && mouse_info.bmMiddleButton) {
         OnMiddleButtonUp(&mouse_info);
     }
 
-    if (left_change || right_change)
+    MOUSE_CLICK* click;
+    bool ctrl_click = setting_storage.settings()->ctrl_lmb && right_change;
+    bool ctrl_click_down = mouse_info.bmRightButton == 1;
+    if (left_change || right_change || mouse_info.dWheel != 0)
     {
+        click = new MOUSE_CLICK;
         if (right_change)
         {
             if (mouse_info.bmRightButton)
             {
-                MOUSE_CLICK* click;
-                switch (m_right_btn_mode)
+                // right mouse button down
+                if (ctrl_click)
                 {
-                    case MouseRightBtnMode::ctrl_click :
-                        while(m_keyboard->PendingKeyboardEvent());
-                        m_keyboard->OnKeyDown(0, USB_KEY_LEFTCTRL);
-                        while(m_keyboard->PendingKeyboardEvent());
-                        sleep_ms(200);
-                        click = new MOUSE_CLICK;
-                        click->bmLeftButton = true;
-                        click->bmMiddleButton = mouse_info.bmMiddleButton;
-                        click->bmRightButton = false;
-                        if (!m_click_events.enqueue(click))
-                        {
-                            Logmsg.println("Warning! unable to enqueue Ctrl + Click Down");
-                        }
-                    break;
-                    case MouseRightBtnMode::right_click :
-                        click = new MOUSE_CLICK;
-                        click->bmRightButton = true;
-                        click->bmMiddleButton = mouse_info.bmMiddleButton;
-                        click->bmLeftButton = mouse_info.bmLeftButton;
-                        if (!m_click_events.enqueue(click))
-                        {
-                            Logmsg.println("Warning! unable to enqueue Right Click Down");
-                        }
-                    break;
+                    click->bmLeftButton = true;
+                    click->bmMiddleButton = mouse_info.bmMiddleButton;
+                    click->bmRightButton = false;
+                }
+                else
+                {
+                    click->bmRightButton = true;
+                    click->bmMiddleButton = mouse_info.bmMiddleButton;
+                    click->bmLeftButton = mouse_info.bmLeftButton;
                 }
             }
             else
             {
-                MOUSE_CLICK* click;
-                switch (m_right_btn_mode)
+                // right mouse button up
+                if (ctrl_click)
                 {
-                    case MouseRightBtnMode::ctrl_click :
-                        click = new MOUSE_CLICK;
-                        click->bmLeftButton = false;
-                        click->bmMiddleButton = mouse_info.bmMiddleButton;
-                        click->bmRightButton = false;
-                        if (!m_click_events.enqueue(click))
-                        {
-                            Logmsg.println("Warning! unable to enqueue Ctrl + Click Up");
-                        }
-                        while(!m_click_events.isEmpty());
-                        sleep_ms(100);
-                        while(m_keyboard->PendingKeyboardEvent());
-                        m_keyboard->OnKeyUp(0, USB_KEY_LEFTCTRL);
-                        while(m_keyboard->PendingKeyboardEvent());
-                    break;
-                    case MouseRightBtnMode::right_click :
-                        click = new MOUSE_CLICK;
-                        click->bmRightButton = false;
-                        click->bmLeftButton = mouse_info.bmLeftButton;
-                        if (!m_click_events.enqueue(click))
-                        {
-                            Logmsg.println("Warning! unable to enqueue new Right Click Up");
-                        }
-                    break;
+                    click->bmLeftButton = false;
+                    click->bmMiddleButton = mouse_info.bmMiddleButton;
+                    click->bmRightButton = false;
+                }
+                else
+                {
+                    click->bmRightButton = false;
+                    click->bmLeftButton = mouse_info.bmLeftButton;
                 }
             }
         }
-        else
+
+        if (left_change)
         {
-            MOUSE_CLICK* click = new MOUSE_CLICK;
-            click->bmLeftButton = mouse_info.bmLeftButton;
+            if (!ctrl_click)
+                click->bmLeftButton = mouse_info.bmLeftButton;
             click->bmMiddleButton = mouse_info.bmMiddleButton;
             click->bmRightButton = mouse_info.bmRightButton;
-            if (!m_click_events.enqueue(click))
+        }
+
+        click->dWheel = mouse_info.dWheel;
+
+        uint32_t start = millis();
+        bool success = false;
+        enum class ctrl_key_logic {WAIT_EMPTY_CLICK_Q, WAIT_EMPTY_KB_Q, CTRL_PRESSED, CTRL_PRESSED_EXECUTED, Q_CLICK,
+                                    CLICK_QED, WAIT_TO_RELEASE, CTRL_RELEASED} ctrl_key_state_machine;
+        ctrl_key_state_machine = ctrl_key_logic::WAIT_EMPTY_CLICK_Q;
+        while((uint32_t)(millis() - start) < ENQUEUE_RETRY_TIMEOUT)
+        {
+            // Right click to set control + left click down state-machine
+            if (ctrl_click && ctrl_click_down && success == false)
             {
-                Logmsg.println("Warning! unable to enqueue Left Click event");
+                switch (ctrl_key_state_machine)
+                {
+                    case ctrl_key_logic::WAIT_EMPTY_CLICK_Q :
+                        if (m_click_events.isEmpty())
+                        {
+                            ctrl_key_state_machine = ctrl_key_logic::WAIT_EMPTY_KB_Q;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::WAIT_EMPTY_KB_Q :
+                        if (!m_keyboard->PendingKeyboardEvent())
+                        {
+                            m_keyboard->OnKeyDown(0, USB_KEY_LEFTCTRL);
+                            ctrl_key_state_machine = ctrl_key_logic::CTRL_PRESSED;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::CTRL_PRESSED:
+                        if (!m_keyboard->PendingKeyboardEvent())
+                        {
+                            ctrl_key_state_machine = ctrl_key_logic::CTRL_PRESSED_EXECUTED;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::CTRL_PRESSED_EXECUTED:
+                        // wait 50ms before clicking left mouse button while CTRL is pressed
+                        if ((uint32_t)(millis() - start) > 50)
+                        {
+                            ctrl_key_state_machine = ctrl_key_logic::Q_CLICK;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::Q_CLICK:
+                        if (m_click_events.enqueue(click))
+                        {
+                            ctrl_key_state_machine = ctrl_key_logic::CLICK_QED;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::CLICK_QED:
+                        if (m_click_events.isEmpty())
+                        {
+                            ctrl_key_state_machine = ctrl_key_logic::WAIT_TO_RELEASE;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::WAIT_TO_RELEASE:
+                        // wait 50 ms before release the CTRL key
+                        if ((uint32_t)(millis() - start) > 50)
+                        {
+                            m_keyboard->OnKeyUp(0, USB_KEY_LEFTCTRL);
+                            ctrl_key_state_machine = ctrl_key_logic::CTRL_RELEASED;
+                            start = millis();
+                        }
+                        break;
+                    case ctrl_key_logic::CTRL_RELEASED:
+                        // wait for the key up to be sent to the host
+                        if (!m_keyboard->PendingKeyboardEvent())
+                            success = true; // exit state-machine
+                        break;
+                }
+            } 
+            else  if (m_click_events.enqueue(click))
+            {
+                // Normal click
+                success = true;
             }
+            
+            if (success == true)
+                break;
+        }
+
+        if (!success)
+        {
+            Logmsg.println("Timeout Warning! Unable to enqueue click event after retrying");
+        }
+
+    }
+
+
+    bool axis = 0 == setting_storage.settings()->swap_mouse_wheel_axis;
+    int8_t times = setting_storage.settings()->mouse_wheel_count;
+    int8_t scroll = mouse_info.dWheel;
+
+    // If `times` is positive, for each scroll movement increment, press the arrow key `times` number of times
+    // If `times` is negative, divide the scroll movement by times
+    // If `times` is zero or one, use the scroll value as is
+    if (times > 1)
+    {
+        scroll *= times;
+    }
+
+    if (times < 0)
+    {
+        static int16_t acc = 0;
+        acc += scroll;
+        if (abs(acc / times) > 0)
+        {
+            scroll = acc / -times;
+            acc -= scroll * -times;
+        }
+        else
+            scroll = 0;
+    }
+
+    if (scroll > 0)
+    {
+        for (int dw = 0; dw < scroll; dw++)
+        {
+                m_keyboard->OnKeyDown(0, axis ? USB_KEY_UP : USB_KEY_DOWN);
+                m_keyboard->OnKeyUp(0, axis ? USB_KEY_UP : USB_KEY_DOWN);
         }
     }
+
+    if (scroll < 0)
+    {
+        for (int dw = 0; dw > scroll; dw--)
+        {
+            m_keyboard->OnKeyDown(0, axis ? USB_KEY_DOWN : USB_KEY_UP);
+            m_keyboard->OnKeyUp(0, axis ? USB_KEY_DOWN : USB_KEY_UP);
+        }
+    }
+
     memcpy(prevState.bInfo, &mouse_info, sizeof(prevState.bInfo));
     if (significant_motion) {
         m_ready = true;
