@@ -168,42 +168,47 @@ int16_t AdbInterface::ReceiveCommand(uint8_t srq)
   {
 
     lo = wait_data_hi(4000);
-    if (!lo || lo > 820 || lo < 780)
+
+    // Timeout -- no attention pulse detected within 4ms
+    if (!lo)
     {
-      if (lo > 0 && lo < 780) {
-        // waiting for attention signal
-        // another device maybe receiving or transmitting
-        continue;
-      }
-
-      if (lo > 2950) 
-      {
-        if (global_debug)
-        {
-          Logmsg.print("ALL: Global reset detected, wait time was ");
-          Logmsg.print(lo, fmtDEC);
-          Logmsg.println("us");
-        }
-        return -100;
-      }
-      else
-      {
-        // low signal is zero or too long for attention but too short for reset
-        if (global_debug)
-        {
-          Logmsg.print("ALL: Error in attention low time,  wait time was ");
-          Logmsg.print(lo, fmtDEC);
-          Logmsg.println("us");
-
-        }
-        return -1;
-      }
+      return -1;
     }
-    else
+
+    // Global reset (3ms LOW)
+    if (lo > 2950)
     {
-      // Attention was ~800us like it should be
+      if (global_debug)
+      {
+        Logmsg.print("ALL: Global reset detected, wait time was ");
+        Logmsg.print(lo, fmtDEC);
+        Logmsg.println("us");
+      }
+      return -100;
+    }
+
+    // ADB spec allows attention pulse width of 560-1040us.
+    // Use 500-1100us margin for clock variations between hosts.
+    if (lo >= 500 && lo <= 1100)
+    {
+      // Valid attention pulse
       break;
     }
+
+    // Too short -- another device may be transmitting; keep waiting
+    if (lo < 500)
+    {
+      continue;
+    }
+
+    // lo is between 1101-2950: too long for attention, too short for reset
+    if (global_debug)
+    {
+      Logmsg.print("ALL: Error in attention low time, wait time was ");
+      Logmsg.print(lo, fmtDEC);
+      Logmsg.println("us");
+    }
+    return -1;
   }
   while(true);
   hi = wait_data_lo(100);
@@ -462,7 +467,7 @@ void AdbInterface::ProcessCommand(int16_t cmd)
       if (mousepending)
       {
         if (!Send16bitRegister(MousePrs.GetAdbRegister0()))
-        { 
+        {
           if (global_debug)
           {
             Logmsg.println("MOUSE: Talk failed to send register 0");
@@ -747,7 +752,7 @@ uint16_t AdbInterface::GetAdbRegister3Mouse()
   B_UNSET(mousereg3, 13);
   // 12      Reserved; must be 0
   B_UNSET(mousereg3, 12);
-  // 11-8      Device address 
+  // 11-8      Device address
   // "ADB - The Untold Story: Space Aliens Ate My Mouse"
   // specifies that a random value should be returned as the address for register 3
   static uint8_t random_address = 0xFF;
