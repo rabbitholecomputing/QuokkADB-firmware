@@ -6,12 +6,12 @@ on:
 
 jobs:
   build_quokkadb:
-    name: Build firmware on Ubuntu 22.04
-    runs-on: ubuntu-22.04
+    name: Build firmware on Latest Ubuntu 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: quokkadb
           fetch-depth: "0"
@@ -36,7 +36,7 @@ jobs:
           utils/rename_quokkadb_binaries.sh
 
       - name: Upload binaries into build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: 
           path: quokkadb/src/firmware/distrib/*
           name: QuokkADB binaries
